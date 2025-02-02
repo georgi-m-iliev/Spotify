@@ -1,25 +1,30 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.command;
 
 public enum CommandType {
-    REGISTER(2),
-    LOGIN(2),
-    LOGOUT(0),
-    DISCONNECT(0),
-    SEARCH(-1),
-    TOP(1),
-    CREATE_PLAYLIST(1),
-    ADD_SONG_TO(2),
-    SHOW_PLAYLIST(1),
-    PLAY(1);
+    REGISTER(2, false),
+    LOGIN(2, false),
+    DISCONNECT(0, false),
+    SEARCH(-1, false),
+    TOP(1, false),
+    CREATE_PLAYLIST(1, true),
+    ADD_SONG_TO(2, true),
+    SHOW_PLAYLIST(1, true),
+    PLAY(1, false);
 
     private final int argumentsCount;
+    private final boolean requiresAuthentication;
 
-    CommandType(int argumentsCount) {
+    CommandType(int argumentsCount, boolean requiresAuthentication) {
         this.argumentsCount = argumentsCount;
+        this.requiresAuthentication = requiresAuthentication;
     }
 
     public int getArgumentsCount() {
         return argumentsCount;
+    }
+
+    public boolean requiresAuthentication() {
+        return requiresAuthentication;
     }
 
     public String getCommandName() {
