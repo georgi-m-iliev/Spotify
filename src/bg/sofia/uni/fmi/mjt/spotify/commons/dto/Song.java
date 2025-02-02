@@ -35,11 +35,11 @@ public class Song {
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof Song song)) return false;
-        return index == song.index && Objects.equals(name, song.name) && Objects.equals(artist, song.artist);
+        return Objects.equals(name, song.name) && Objects.equals(artist, song.artist);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(index, name, artist);
+        return Objects.hash(name, artist);
     }
 }
