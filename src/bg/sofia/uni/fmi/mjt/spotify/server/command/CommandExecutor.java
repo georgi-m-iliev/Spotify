@@ -2,14 +2,13 @@ package bg.sofia.uni.fmi.mjt.spotify.server.command;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandType;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Playlist;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.User;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.UserStorage;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public class CommandExecutor {
     private final UserStorage users;

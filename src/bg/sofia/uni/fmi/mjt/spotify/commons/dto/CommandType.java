@@ -1,4 +1,4 @@
-package bg.sofia.uni.fmi.mjt.spotify.server.command;
+package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 
 public enum CommandType {
     REGISTER(2, false),

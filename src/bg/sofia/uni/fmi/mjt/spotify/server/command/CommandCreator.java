@@ -1,9 +1,9 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.command;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandType;
 import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.InvalidCommandException;
 import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
