@@ -14,7 +14,6 @@ import java.util.Set;
 public class CommandExecutor {
     private final UserStorage users;
     private final List<Song> songs;
-    private final Set<User> loggedInUsers;
 
     public CommandExecutor(UserStorage users, List<Song> songs) {
         if (users == null || songs == null) {
@@ -22,14 +21,19 @@ public class CommandExecutor {
         }
         this.users = users;
         this.songs = songs;
-        this.loggedInUsers = new HashSet<>();
     }
 
     public CommandResponse execute(Command cmd) {
+        if (cmd.command().requiresAuthentication()) {
+            CommandResponse errAuthResponse = validateAuthentication(cmd.accessKey());
+            if (errAuthResponse != null) {
+                return errAuthResponse;
+            }
+        }
+
         return switch (cmd.command()) {
             case REGISTER -> register(cmd.arguments());
             case LOGIN -> login(cmd.arguments());
-            case LOGOUT -> logout(cmd.arguments(), cmd.accessKey());
             case DISCONNECT -> null;
             case SEARCH -> search(cmd.arguments(), cmd.accessKey());
             case TOP -> top(cmd.arguments(), cmd.accessKey());
@@ -40,11 +44,30 @@ public class CommandExecutor {
         };
     }
 
-    private CommandResponse register(String[] args) {
-        if (args.length != CommandType.REGISTER.getArgumentsCount()) {
+    private CommandResponse validateAuthentication(AccessKey accessKey) {
+        if (accessKey == null) {
             return CommandResponse.builder()
                     .status("ERROR")
-                    .message("register expects 2 arguments.")
+                    .message("You are not logged in.")
+                    .build();
+        }
+
+        User user = users.getUser(accessKey.username());
+        if (!user.isAccessKeyValid(accessKey)) {
+            return CommandResponse.builder()
+                    .status("ERROR")
+                    .message("Invalid access key.")
+                    .build();
+        }
+        return null;
+    }
+
+    private CommandResponse register(String[] args) {
+        int argCount = CommandType.REGISTER.getArgumentsCount();
+        if (args.length != argCount) {
+            return CommandResponse.builder()
+                    .status("ERROR")
+                    .message(String.format("register expects %s arguments.", argCount))
                     .build();
         }
 
@@ -60,10 +83,11 @@ public class CommandExecutor {
     }
 
     private CommandResponse login(String[] args) {
-        if (args.length != CommandType.LOGIN.getArgumentsCount()) {
+        int argCount = CommandType.LOGIN.getArgumentsCount();
+        if (args.length != argCount) {
             return CommandResponse.builder()
                     .status("ERROR")
-                    .message("login expects 2 arguments.")
+                    .message(String.format("login expects %s arguments.", argCount))
                     .build();
         }
 
@@ -77,82 +101,25 @@ public class CommandExecutor {
                     .build();
         }
 
-        if (loggedInUsers.contains(user)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("User is already logged in.")
-                    .build();
-        }
-
         if (user.validatePassword(password)) {
-            loggedInUsers.add(user);
             return CommandResponse.builder()
                     .status("OK")
                     .message("User logged in successfully.")
                     .accessKey(user.getAccessKey())
                     .build();
         }
+
         return CommandResponse.builder()
                 .status("ERROR")
                 .message("Invalid password.")
                 .build();
     }
 
-    private CommandResponse logout(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
-        if (args.length != CommandType.LOGOUT.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("logout expects 0 arguments.")
-                    .build();
-        }
-
-        User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
-                    .build();
-        }
-
-        if (!loggedInUsers.contains(user)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("User is not logged in.")
-                    .build();
-        }
-
-        loggedInUsers.remove(user);
-        return CommandResponse.builder()
-                .status("OK")
-                .message("User logged out successfully.")
-                .build();
-    }
-
     private CommandResponse search(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length < CommandType.SEARCH.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
                     .message("search expects at least 1 argument.")
-                    .build();
-        }
-
-        User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
                     .build();
         }
 
@@ -167,6 +134,7 @@ public class CommandExecutor {
                     return false;
                 })
                 .toList();
+
         return CommandResponse.builder()
                 .status("OK")
                 .message(String.format("Search has returned %s songs.", results.size()))
@@ -175,12 +143,6 @@ public class CommandExecutor {
     }
 
     private CommandResponse createPlaylist(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length != CommandType.CREATE_PLAYLIST.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
@@ -189,12 +151,6 @@ public class CommandExecutor {
         }
 
         User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
-                    .build();
-        }
 
         if (user.getPlaylists().stream().anyMatch(playlist -> playlist.name().equals(args[0]))) {
             return CommandResponse.builder()
@@ -211,12 +167,6 @@ public class CommandExecutor {
     }
 
     private CommandResponse addSongTo(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length != CommandType.ADD_SONG_TO.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
@@ -225,12 +175,6 @@ public class CommandExecutor {
         }
 
         User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
-                    .build();
-        }
 
         Playlist playlist = user.getPlaylists().stream()
                 .filter(p -> p.name().equals(args[0]))
@@ -279,12 +223,6 @@ public class CommandExecutor {
     }
 
     private CommandResponse showPlaylist(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length != CommandType.SHOW_PLAYLIST.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
@@ -293,12 +231,6 @@ public class CommandExecutor {
         }
 
         User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
-                    .build();
-        }
 
         Playlist playlist = user.getPlaylists().stream()
                 .filter(p -> p.name().equals(args[0]))
@@ -319,24 +251,10 @@ public class CommandExecutor {
     }
 
     public CommandResponse play(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length != CommandType.PLAY.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
                     .message("play expects 1 argument.")
-                    .build();
-        }
-
-        User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
                     .build();
         }
 
@@ -370,24 +288,10 @@ public class CommandExecutor {
     }
 
     public CommandResponse top(String[] args, AccessKey accessKey) {
-        if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
-        }
         if (args.length != CommandType.TOP.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
                     .message("top expects 1 argument.")
-                    .build();
-        }
-
-        User user = users.getUser(accessKey.username());
-        if (user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
                     .build();
         }
 
