@@ -23,6 +23,7 @@ public class SpotifyClient {
     private final InetSocketAddress serverAddress;
     private final ByteBuffer buffer;
     private AccessKey accessKey;
+    private boolean connected;
 
     public SpotifyClient() {
         serverAddress = new InetSocketAddress(serverHost, serverPort);
@@ -31,42 +32,62 @@ public class SpotifyClient {
     }
 
     public void enter() {
+        connected = true;
         try (SocketChannel socketChannel = SocketChannel.open(serverAddress);
              Scanner sc = new Scanner(System.in)) {
             System.out.println("Connected to server.");
 
-            while (true) {
+            while (connected) {
                 System.out.print("> ");
+                String command = sc.nextLine();
 
-                ClientRequest request = ClientRequest.of(sc.nextLine(), accessKey);
-                sendRequest(request, socketChannel);
-
-                if (request.command().strip().startsWith("disconnect")) {
-                    break;
-                }
-
-                CommandResponse response = getResponse(socketChannel);
-                if (response == null) {
-                    System.out.println("Server error occurred. Please try again later.");
-                    continue;
-                }
-                updateAccessKey(response);
-
-                if (response.status().equals("ERROR")) {
-                    handleError(response);
-                }
-                else {
-                    processCommandResponse(request.command().strip().split(" ")[0], response);
-                }
+                processCommand(command, socketChannel);
             }
 
         } catch (IOException e) {
             System.err.println("Client error occurred. Please restart.");
-            // TODO: log error
         }
     }
 
+    private void processCommand(String command, SocketChannel socketChannel) throws IOException {
+        ClientRequest request = ClientRequest.of(command, accessKey);
+        String commandName = command.split(" ")[0];
+        switch (commandName) {
+            case "disconnect":
+                sendRequest(request, socketChannel);
+                System.out.println("Disconnected from server.");
+                connected = false;
+                return;
+            case "logout":
+                accessKey = null;
+                System.out.println("You have been logged out.");
+                return;
+            case "login":
+            case "register":
+                if (accessKey != null) {
+                    System.out.println("You are already logged in.");
+                    return;
+                }
+        }
+        sendRequest(request, socketChannel);
+
+        CommandResponse response = getResponse(socketChannel);
+        processCommandResponse(commandName, response);
+    }
+
     private void processCommandResponse(String command, CommandResponse response) {
+        if (response == null) {
+            System.out.println("Server error occurred. Please try again later.");
+            return;
+        }
+
+        updateAccessKey(response);
+
+        if (response.status().equals("ERROR")) {
+            handleError(response);
+            return;
+        }
+
         switch (command) {
             case "search":
                 printSearchResults(response);
@@ -77,8 +98,6 @@ public class SpotifyClient {
             case "show-playlist":
                 printPlaylist(response);
                 break;
-            case "logout":
-                accessKey = null;
             default:
                 System.out.println(response.message());
                 break;
