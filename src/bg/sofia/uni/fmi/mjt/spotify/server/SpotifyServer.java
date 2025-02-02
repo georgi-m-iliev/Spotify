@@ -48,8 +48,8 @@ public class SpotifyServer {
         this.songsDirPath = songsDirPath;
         this.availableSongs = new ArrayList<>();
         this.users = new LocalUserStorage(Path.of("users.txt"));
-        loadSongs();
         this.commandExecutor = new CommandExecutor(users, availableSongs);
+        loadSongs();
     }
 
     private void loadSongs() {
@@ -152,7 +152,11 @@ public class SpotifyServer {
                             accessKey);
                     writeClientOutput(clientChannel, commandExecutor.execute(command));
                 } catch (InvalidCommandException e) {
-                    writeClientOutput(clientChannel, CommandResponse.of("ERROR", e.getMessage()));
+                    CommandResponse error = CommandResponse.builder()
+                            .status("ERROR")
+                            .message("Request has failed. Please try again!")
+                            .build();
+                    writeClientOutput(clientChannel, error);
                 }
 
             } else if (key.isAcceptable()) {
@@ -181,7 +185,6 @@ public class SpotifyServer {
 
     private String getClientInput(SocketChannel clientChannel) throws IOException {
         buffer.clear();
-
         int readBytes = clientChannel.read(buffer);
         if (readBytes < 0) {
             clientChannel.close();
@@ -189,7 +192,6 @@ public class SpotifyServer {
         }
 
         buffer.flip();
-
         byte[] clientInputBytes = new byte[buffer.remaining()];
         buffer.get(clientInputBytes);
 
