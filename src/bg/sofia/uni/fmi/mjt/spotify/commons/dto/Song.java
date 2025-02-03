@@ -5,11 +5,11 @@ import java.util.Objects;
 
 public class Song {
     private final int index;
-    private final String name;
     private final String artist;
+    private final String name;
     private final transient Path path;
 
-    public Song(int index, String name, String artist, Path path) {
+    public Song(int index, String artist, String name, Path path) {
         this.index = index;
         this.name = name;
         this.artist = artist;
@@ -20,12 +20,12 @@ public class Song {
         return index;
     }
 
-    public String name() {
-        return name;
-    }
-
     public String artist() {
         return artist;
+    }
+
+    public String name() {
+        return name;
     }
 
     public Path path() {

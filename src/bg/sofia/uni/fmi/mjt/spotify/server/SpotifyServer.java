@@ -1,6 +1,5 @@
 package bg.sofia.uni.fmi.mjt.spotify.server;
 
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
@@ -8,7 +7,10 @@ import bg.sofia.uni.fmi.mjt.spotify.server.command.Command;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandCreator;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.InvalidCommandException;
+import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.SongLoadingFailureException;
+import bg.sofia.uni.fmi.mjt.spotify.server.songs.SongLoader;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.LocalUserStorage;
+
 import com.google.gson.Gson;
 
 import java.io.IOException;
@@ -20,10 +22,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,48 +34,18 @@ public class SpotifyServer {
     private final CommandExecutor commandExecutor;
 
     private final int port;
-    private final Path songsDirPath;
     private boolean isServerWorking;
 
     private ByteBuffer buffer;
     private Selector selector;
-    private List<Song> availableSongs;
-    private LocalUserStorage users;
+    private final List<Song> availableSongs;
+    private final LocalUserStorage users;
 
-    public SpotifyServer(int port, Path songsDirPath) {
+    public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
         this.port = port;
-        this.songsDirPath = songsDirPath;
-        this.availableSongs = new ArrayList<>();
         this.users = new LocalUserStorage(Path.of("users.txt"));
+        this.availableSongs = SongLoader.loadSongs(songsDirPath);
         this.commandExecutor = new CommandExecutor(users, availableSongs);
-        loadSongs();
-    }
-
-    private void loadSongs() {
-        if (!Files.exists(songsDirPath)) {
-            throw new IllegalArgumentException("Nonexistent path for songs directory");
-        }
-        if (!Files.isDirectory(songsDirPath)) {
-            throw new IllegalArgumentException("Invalid path for songs directory");
-        }
-        try(DirectoryStream<Path> dirStream = Files.newDirectoryStream(songsDirPath)) {
-            int ind = 0;
-            for (Path songPath : dirStream) {
-                if (!songPath.toFile().getName().endsWith(".wav")) {
-                    continue;
-                }
-                availableSongs.add(
-                    new Song(
-                        ind++,
-                        songPath.getFileName().toString().split("\\.")[0],
-                        "unknown",
-                        songPath)
-                );
-            }
-
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to load songs", e);
-        }
     }
 
     public void start() {
