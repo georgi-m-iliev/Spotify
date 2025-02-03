@@ -59,8 +59,13 @@ public class SpotifyClient {
                 connected = false;
                 return;
             case "logout":
-                accessKey = null;
-                System.out.println("You have been logged out.");
+                if (accessKey == null) {
+                    System.out.println("You aren't logged in.");
+                }
+                else {
+                    accessKey = null;
+                    System.out.println("You have been logged out.");
+                }
                 return;
             case "login":
             case "register":
