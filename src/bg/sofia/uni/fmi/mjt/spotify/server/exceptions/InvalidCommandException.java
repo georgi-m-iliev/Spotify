@@ -1,6 +1,6 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.exceptions;
 
-public class InvalidCommandException extends RuntimeException {
+public class InvalidCommandException extends Exception {
     public InvalidCommandException(String message) {
         super(message);
     }

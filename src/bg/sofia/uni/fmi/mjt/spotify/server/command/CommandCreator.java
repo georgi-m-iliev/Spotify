@@ -34,7 +34,7 @@ public class CommandCreator {
         return tokens;
     }
 
-    public static Command newCommand(String clientInput, AccessKey accessKey) {
+    public static Command newCommand(String clientInput, AccessKey accessKey) throws InvalidCommandException {
         List<String> tokens = CommandCreator.getCommandArguments(clientInput);
         String[] args = tokens.subList(1, tokens.size()).toArray(new String[0]);
 

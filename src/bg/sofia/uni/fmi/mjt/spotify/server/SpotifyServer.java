@@ -124,6 +124,7 @@ public class SpotifyServer {
                 try {
                     clientInput = getClientInput(clientChannel);
                 } catch (IOException e) {
+                    // TODO: Log client socket reset
                     System.out.println("Error occurred while reading client input: " + e.getMessage());
                     disposeSocket(clientChannel, key, keyIterator);
                     continue;
@@ -135,30 +136,29 @@ public class SpotifyServer {
 
                 // TODO: handle wrong input, not properly formatted JSON
                 ClientRequest request = gson.fromJson(clientInput, ClientRequest.class);
+
                 if (request.command().equals("disconnect")) {
                     System.out.println("Client has requested a disconnect: " + clientChannel.getRemoteAddress());
+                    // TODO: Log client disconnect
                     disposeSocket(clientChannel, key, keyIterator);
                     continue;
                 }
 
-                AccessKey accessKey = null;
-                if (request.accessKey() != null) {
-                    accessKey = request.accessKey();
-                }
-
+                CommandResponse response;
                 try {
                     Command command = CommandCreator.newCommand(
                             request.command().stripTrailing(),
-                            accessKey);
-                    writeClientOutput(clientChannel, commandExecutor.execute(command));
+                            request.accessKey());
+                    response = commandExecutor.execute(command);
                 } catch (InvalidCommandException e) {
-                    CommandResponse error = CommandResponse.builder()
+                    // TODO: Log invalid command
+                    response = CommandResponse.builder()
                             .status("ERROR")
-                            .message("Request has failed. Please try again!")
+                            .message("Invalid command. Please try again!")
                             .build();
-                    writeClientOutput(clientChannel, error);
                 }
 
+                writeClientOutput(clientChannel, response);
             } else if (key.isAcceptable()) {
                 accept(selector, key);
             }
@@ -173,14 +173,10 @@ public class SpotifyServer {
         channel.register(selector, SelectionKey.OP_ACCEPT);
     }
 
-    private void disposeSocket(SocketChannel clientChannel, SelectionKey key, Iterator<SelectionKey> keyIterator) {
-        try {
-            clientChannel.close();
-            key.cancel();
-            keyIterator.remove();
-        } catch (IOException e) {
-            System.out.println("Error occurred while disposing socket: " + e.getMessage());
-        }
+    private void disposeSocket(SocketChannel clientChannel, SelectionKey key, Iterator<SelectionKey> keyIterator) throws IOException {
+        clientChannel.close();
+        key.cancel();
+        keyIterator.remove();
     }
 
     private String getClientInput(SocketChannel clientChannel) throws IOException {
