@@ -44,8 +44,8 @@ public class SpotifyServer {
 
     public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
         this.port = port;
-        this.users = new LocalUserStorage(Path.of("users.txt"));
         List<Song> availableSongs = SongLoader.loadSongs(songsDirPath);
+        this.users = new LocalUserStorage(Path.of("users.txt"), availableSongs);
         this.executor = Executors.newCachedThreadPool();
         this.commandExecutor = new CommandExecutor(users, availableSongs, executor);
     }

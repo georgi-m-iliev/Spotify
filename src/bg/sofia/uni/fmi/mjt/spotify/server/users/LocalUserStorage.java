@@ -1,6 +1,11 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.users;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Playlist;
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
+import bg.sofia.uni.fmi.mjt.spotify.commons.json.adapters.PlaylistAdapter;
+
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -9,13 +14,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class LocalUserStorage implements UserStorage, AutoCloseable {
-    private static final Gson gson = new Gson();
+    private final Gson gson;
     private final Path storagePath;
     private final List<User> users;
 
-    public LocalUserStorage(Path storagePath) {
+    public LocalUserStorage(Path storagePath, List<Song> songs) {
         this.storagePath = storagePath;
         this.users = new ArrayList<>();
+        this.gson = new GsonBuilder().registerTypeAdapter(Playlist.class, new PlaylistAdapter(songs)).create();
         loadUsers();
     }
 
