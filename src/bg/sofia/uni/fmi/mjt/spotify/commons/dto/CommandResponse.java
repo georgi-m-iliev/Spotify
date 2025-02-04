@@ -13,6 +13,7 @@ public class CommandResponse {
     private final Map<Integer, Song> data;
     @JsonAdapter(AudioFormatAdapter.class)
     private final AudioFormat audioFormat;
+    private final StreamTransport transport;
 
     private CommandResponse(Builder builder) {
         this.status = builder.status;
@@ -20,6 +21,7 @@ public class CommandResponse {
         this.accessKey = builder.accessKey;
         this.data = builder.data;
         this.audioFormat = builder.audioFormat;
+        this.transport = builder.transport;
     }
 
     public String status() {
@@ -42,6 +44,10 @@ public class CommandResponse {
         return audioFormat;
     }
 
+    public StreamTransport transport() {
+        return transport;
+    }
+
     public static Builder builder() {
         return new Builder();
     }
@@ -52,6 +58,7 @@ public class CommandResponse {
         private AccessKey accessKey;
         private Map<Integer, Song> data;
         private AudioFormat audioFormat;
+        private StreamTransport transport;
 
         public Builder status(String status) {
             this.status = status;
@@ -75,6 +82,11 @@ public class CommandResponse {
 
         public Builder audioFormat(AudioFormat audioFormat) {
             this.audioFormat = audioFormat;
+            return this;
+        }
+
+        public Builder transport(StreamTransport transport) {
+            this.transport = transport;
             return this;
         }
 

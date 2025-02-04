@@ -7,6 +7,7 @@ import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 
 import com.google.gson.Gson;
 
+import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -17,17 +18,18 @@ import java.util.Scanner;
 
 public class SpotifyClient {
     static Gson gson = new Gson();
-    private static final String serverHost = "localhost";
+    private static final String serverHost = "192.168.1.101";
     private static final int serverPort = 9090;
 
     private final InetSocketAddress serverAddress;
     private final ByteBuffer buffer;
     private AccessKey accessKey;
     private boolean connected;
+    private Thread playbackThread;
 
     public SpotifyClient() {
         serverAddress = new InetSocketAddress(serverHost, serverPort);
-        buffer = ByteBuffer.allocate(512);
+        buffer = ByteBuffer.allocate(1024);
         accessKey = null;
     }
 
@@ -97,6 +99,22 @@ public class SpotifyClient {
             case "search":
                 printSearchResults(response);
                 break;
+            case "play":
+                try {
+                    playSong(response);
+                } catch (LineUnavailableException e) {
+                    System.out.println("Couldn't open audio device for playback.");
+                }
+                System.out.println(response.message());
+                break;
+            case "stop":
+                if (playbackThread == null) {
+                    System.out.println("No song is currently playing.");
+                    return;
+                }
+                playbackThread.interrupt();
+                System.out.println("Playback stopped.");
+                break;
             case "top":
                 printSongList(response.data());
                 break;
@@ -163,6 +181,17 @@ public class SpotifyClient {
             return;
         }
         printSongList(response.data());
+    }
+
+    private void playSong(CommandResponse response) throws LineUnavailableException {
+        Runnable streamClient = switch (response.transport()) {
+            case TCP -> new TCPStreamClient(serverAddress.getAddress(), 7777, response.audioFormat());
+            case UDP -> new UDPStreamClient(50005, response.audioFormat());
+        };
+
+        playbackThread = new Thread(streamClient);
+        playbackThread.setDaemon(true);
+        playbackThread.start();
     }
 
     public static void main(String[] args) {

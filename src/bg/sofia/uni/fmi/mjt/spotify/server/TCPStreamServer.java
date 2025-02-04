@@ -7,7 +7,7 @@ import java.io.FileInputStream;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
 
-public class TCPStreamServer implements Runnable {
+public class TCPStreamServer implements Runnable{
     private final int port;
     private final Path audioFilePath;
 
@@ -46,14 +46,5 @@ public class TCPStreamServer implements Runnable {
             // TODO: Handle this error
             System.err.println("Server error: " + e.getMessage());
         }
-    }
-
-    public static void main(String[] args) {
-        // Example usage
-        int port = 8080;
-        Path audioFilePath = Path.of("resources/test.wav");
-        TCPStreamServer server = new TCPStreamServer(port, audioFilePath);
-        Thread serverThread = new Thread(server);
-        serverThread.start();
     }
 }

@@ -44,21 +44,12 @@ public class TCPStreamClient implements Runnable {
             dataLine.close();
         } catch (IOException e) {
             if (e instanceof SocketException && e.getMessage().equals("Connection reset")) {
-                System.err.println("Server closed the connection.");
+                System.out.println("Server disconnected.");
             } else {
                 System.err.println("Error streaming audio: " + e.getMessage());
             }
         } catch (LineUnavailableException e) {
             System.err.println("Error opening audio line: " + e.getMessage());
         }
-    }
-
-    public static void main(String[] args) throws UnsupportedAudioFileException, IOException, LineUnavailableException {
-        // Example usage
-        InetAddress serverAddress = InetAddress.getByName("localhost");
-        AudioFormat audioFormat = AudioSystem.getAudioFileFormat(new File("resources/testк.wav")).getFormat();
-        TCPStreamClient client = new TCPStreamClient(serverAddress, 7777, audioFormat);
-        Thread clientThread = new Thread(client);
-        clientThread.start();
     }
 }

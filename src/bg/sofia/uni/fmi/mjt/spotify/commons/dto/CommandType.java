@@ -9,7 +9,8 @@ public enum CommandType {
     CREATE_PLAYLIST(1, true),
     ADD_SONG_TO(2, true),
     SHOW_PLAYLIST(1, true),
-    PLAY(1, false);
+    PLAY(1, true),
+    STOP(0, true);
 
     private final int argumentsCount;
     private final boolean requiresAuthentication;

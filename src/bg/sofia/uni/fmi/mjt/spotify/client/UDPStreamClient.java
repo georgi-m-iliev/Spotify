@@ -16,7 +16,7 @@ import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.SourceDataLine;
 
 public class UDPStreamClient implements Runnable {
-    private static final int DEFAULT_BUFFER_SIZE = 1000; // Number of packets to buffer
+    private static final int DEFAULT_BUFFER_SIZE = 5000; // Number of packets to buffer
     private static final int DEFAULT_PACKET_SIZE = 9000;
 
     private final int port;
@@ -38,32 +38,36 @@ public class UDPStreamClient implements Runnable {
 
     @Override
     public void run() {
+        Thread playbackThread = null;
         try(DatagramSocket serverSocket = new DatagramSocket(port)) {
             byte[] packetData = new byte[packetSize];
             initSourceDataLine();
-            Thread playbackThread = getPlayer();
+            playbackThread = getPlayer();
 
             while (status.get()) {
                 DatagramPacket receivePacket = new DatagramPacket(packetData, packetData.length);
+                serverSocket.receive(receivePacket);
                 // if the packet is empty, it means the stream is finished
                 if (receivePacket.getLength() == 0) {
+                    System.out.println("Stream finished");
                     status.set(false);
                     break;
                 }
-                serverSocket.receive(receivePacket);
                 packetToAudioStream(receivePacket);
             }
 
             playbackThread.join();
             closeSourceDataLine();
         } catch (SocketException e) {
-            throw new RuntimeException(e);
+            System.out.println("Socket exception");
         } catch (LineUnavailableException e) {
             System.out.println("Line unavailable");
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            playbackThread.interrupt();
+            sourceDataLine.flush();
+            sourceDataLine.close();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -88,6 +92,7 @@ public class UDPStreamClient implements Runnable {
                 while (true) {
                     if (bufferQueue.isEmpty()) {
                         if (!status.get()) {
+                            System.out.println("Playback finished");
                             break;
                         }
                         continue;
@@ -102,15 +107,5 @@ public class UDPStreamClient implements Runnable {
         });
         thread.start();
         return thread;
-    }
-
-    public static void main(String[] args) {
-        // Example usage
-        try {
-            AudioFormat audioFormat = AudioSystem.getAudioFileFormat(Path.of("resources/Jluch - Bulgarskite Seriali.wav").toFile()).getFormat();
-            new Thread(new UDPStreamClient(7777, audioFormat)).start();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 }

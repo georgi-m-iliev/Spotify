@@ -21,7 +21,7 @@ public class UDPStreamServer implements Runnable {
     private final Path audioFilePath;
     private final AudioFormat audioFormat;
 
-    public UDPStreamServer(int port, InetAddress address, Path audioFilePath, AudioFormat audioFormat) {
+    public UDPStreamServer(int port, InetAddress address, Path audioFilePath, AudioFormat audioFormat)  {
         this.port = port;
         this.packetSize = DEFAULT_PACKET_SIZE;
         this.address = address;
@@ -37,7 +37,7 @@ public class UDPStreamServer implements Runnable {
             byte[] data = new byte[packetSize];
             int numBytesRead;
 
-            long timing = (long) (200L * packetSize / audioFormat.getFrameRate() / audioFormat.getFrameSize());
+            long timing = (long) (600L * packetSize / audioFormat.getFrameRate() / audioFormat.getFrameSize());
 
             while ((numBytesRead = audioInputStream.read(data, 0, data.length)) != -1) {
                 datagramPacket = new DatagramPacket(data, numBytesRead, address, port);
@@ -55,16 +55,6 @@ public class UDPStreamServer implements Runnable {
         } catch (UnsupportedAudioFileException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String[] args) {
-        // Example usage
-        try {
-            AudioFormat audioFormat = AudioSystem.getAudioFileFormat(Path.of("resources/Jluch - Bulgarskite Seriali.wav").toFile()).getFormat();
-            new Thread(new UDPStreamServer(7777, InetAddress.getByName("localhost"), Path.of("resources/Jluch - Bulgarskite Seriali.wav"), audioFormat)).start();
-        } catch (Exception e) {
             e.printStackTrace();
         }
     }

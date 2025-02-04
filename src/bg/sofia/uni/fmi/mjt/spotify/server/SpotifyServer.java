@@ -25,10 +25,12 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class SpotifyServer {
     private static final int BUFFER_SIZE = 1024;
-    private static final String HOST = "localhost";
+    private static final String HOST = "192.168.1.101";
     private static final Gson gson = new Gson();
 
     private final CommandExecutor commandExecutor;
@@ -38,14 +40,15 @@ public class SpotifyServer {
 
     private ByteBuffer buffer;
     private Selector selector;
-    private final List<Song> availableSongs;
     private final LocalUserStorage users;
+    private ExecutorService executor;
 
     public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
         this.port = port;
         this.users = new LocalUserStorage(Path.of("users.txt"));
-        this.availableSongs = SongLoader.loadSongs(songsDirPath);
-        this.commandExecutor = new CommandExecutor(users, availableSongs);
+        List<Song> availableSongs = SongLoader.loadSongs(songsDirPath);
+        this.executor = Executors.newCachedThreadPool();
+        this.commandExecutor = new CommandExecutor(users, availableSongs, StreamTransport.TCP, executor);
     }
 
     public void start() {
@@ -81,6 +84,7 @@ public class SpotifyServer {
         if (selector.isOpen()) {
             selector.wakeup();
         }
+        executor.shutdown();
         users.close();
     }
 
