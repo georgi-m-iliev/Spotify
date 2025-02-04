@@ -3,8 +3,8 @@ package bg.sofia.uni.fmi.mjt.spotify.server;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.StreamTransport;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.Command;
-import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandCreator;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.InvalidCommandException;
 import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.SongLoadingFailureException;
@@ -115,9 +115,12 @@ public class SpotifyServer {
 
                 CommandResponse response;
                 try {
-                    Command command = CommandCreator.newCommand(
-                            request.command().stripTrailing(),
-                            request.accessKey());
+                    Command command = Command.creator()
+                            .command(request.command().stripTrailing())
+                            .accessKey(request.accessKey())
+                            .originAddress(clientChannel.socket().getInetAddress())
+                            .originSocket(clientChannel.getRemoteAddress())
+                            .build();
                     response = commandExecutor.execute(command);
                 } catch (InvalidCommandException e) {
                     // TODO: Log invalid command

@@ -36,12 +36,13 @@ public class CommandExecutor {
             case REGISTER -> register(cmd.arguments());
             case LOGIN -> login(cmd.arguments());
             case DISCONNECT -> null;
-            case SEARCH -> search(cmd.arguments(), cmd.accessKey());
-            case TOP -> top(cmd.arguments(), cmd.accessKey());
+            case SEARCH -> search(cmd.arguments());
+            case TOP -> top(cmd.arguments());
             case CREATE_PLAYLIST -> createPlaylist(cmd.arguments(), cmd.accessKey());
             case ADD_SONG_TO -> addSongTo(cmd.arguments(), cmd.accessKey());
             case SHOW_PLAYLIST -> showPlaylist(cmd.arguments(), cmd.accessKey());
-            case PLAY -> play(cmd.arguments(), cmd.accessKey());
+            case PLAY -> play(cmd.arguments(), cmd.originAddress());
+            case STOP -> stop(cmd.originSocket());
         };
     }
 
@@ -116,7 +117,7 @@ public class CommandExecutor {
                 .build();
     }
 
-    private CommandResponse search(String[] args, AccessKey accessKey) {
+    private CommandResponse search(String[] args) {
         if (args.length < CommandType.SEARCH.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
@@ -255,7 +256,7 @@ public class CommandExecutor {
                 .build();
     }
 
-    public CommandResponse play(String[] args, AccessKey accessKey) {
+    public CommandResponse play(String[] args, InetAddress clientAddress) {
         if (args.length != CommandType.PLAY.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
