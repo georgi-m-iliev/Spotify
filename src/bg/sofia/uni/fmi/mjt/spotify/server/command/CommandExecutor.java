@@ -65,18 +65,12 @@ public class CommandExecutor {
 
     private CommandResponse validateAuthentication(AccessKey accessKey) {
         if (accessKey == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not logged in.")
-                    .build();
+            return CommandResponse.builder().buildError("You are not logged in.");
         }
 
         User user = users.getUser(accessKey.username());
         if (!user.isAccessKeyValid(accessKey)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid access key.")
-                    .build();
+            return CommandResponse.builder().buildError("Invalid access key.");
         }
         return null;
     }
@@ -84,10 +78,7 @@ public class CommandExecutor {
     private CommandResponse register(String[] args) {
         int argCount = CommandType.REGISTER.getArgumentsCount();
         if (args.length != argCount) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message(String.format("register expects %s arguments.", argCount))
-                    .build();
+            return CommandResponse.builder().buildError(String.format("register expects %s arguments.", argCount));
         }
 
         String email = args[0];
@@ -95,29 +86,20 @@ public class CommandExecutor {
 
         users.addUser(User.of(email, password));
 
-        return CommandResponse.builder()
-                .status("OK")
-                .message("User registered successfully.")
-                .build();
+        return CommandResponse.builder().buildOK("User registered successfully.");
     }
 
     private CommandResponse login(String[] args) {
         int argCount = CommandType.LOGIN.getArgumentsCount();
         if (args.length != argCount) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message(String.format("login expects %s arguments.", argCount))
-                    .build();
+            return CommandResponse.builder().buildError(String.format("login expects %s arguments.", argCount));
         }
 
         String email = args[0];
         String password = args[1];
         User user = users.getUser(email);
         if (user == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("User with this email was not found.")
-                    .build();
+            return CommandResponse.builder().buildError("User with this email doesn't exists.");
         }
 
         if (user.validatePassword(password)) {
@@ -128,18 +110,12 @@ public class CommandExecutor {
                     .build();
         }
 
-        return CommandResponse.builder()
-                .status("ERROR")
-                .message("Invalid password.")
-                .build();
+        return CommandResponse.builder().buildError("Invalid password.");
     }
 
     private CommandResponse search(String[] args) {
         if (args.length < CommandType.SEARCH.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("search expects at least 1 argument.")
-                    .build();
+            return CommandResponse.builder().buildError("search expects at least 1 argument.");
         }
 
         Map<Integer, Song> results = songs.stream()
@@ -164,34 +140,22 @@ public class CommandExecutor {
 
     private CommandResponse createPlaylist(String[] args, AccessKey accessKey) {
         if (args.length != CommandType.CREATE_PLAYLIST.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("create-playlist expects 1 argument.")
-                    .build();
+            return CommandResponse.builder().buildError("create-playlist expects 1 argument.");
         }
 
         User user = users.getUser(accessKey.username());
 
         if (user.getPlaylists().stream().anyMatch(playlist -> playlist.name().equals(args[0]))) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Playlist with this name already exists.")
-                    .build();
+            return CommandResponse.builder().buildError("Playlist with this name already exists.");
         }
 
         user.getPlaylists().add(Playlist.of(args[0]));
-        return CommandResponse.builder()
-                .status("OK")
-                .message("Playlist created successfully.")
-                .build();
+        return CommandResponse.builder().buildOK("Playlist created successfully.");
     }
 
     private CommandResponse addSongTo(String[] args, AccessKey accessKey) {
         if (args.length != CommandType.ADD_SONG_TO.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("add-song-to expects 2 arguments.")
-                    .build();
+            return CommandResponse.builder().buildError("add-song-to expects 2 arguments.");
         }
 
         User user = users.getUser(accessKey.username());
@@ -201,20 +165,14 @@ public class CommandExecutor {
                 .findFirst()
                 .orElse(null);
         if (playlist == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Playlist with this name doesn't exists.")
-                    .build();
+            return CommandResponse.builder().buildError("Playlist with this name doesn't exists.");
         }
 
         int songIndex;
         try {
             songIndex = Integer.parseInt(args[1]);
         } catch (NumberFormatException e) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid song index.")
-                    .build();
+            return CommandResponse.builder().buildError("Invalid song index.");
         }
 
         Song toAdd = songs.stream()
@@ -222,32 +180,20 @@ public class CommandExecutor {
                 .findFirst()
                 .orElse(null);
         if (toAdd == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Song with this index doesn't exists.")
-                    .build();
+            return CommandResponse.builder().buildError("Song with this index doesn't exists.");
         }
 
         if (playlist.songs().contains(toAdd)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Song is already in the playlist.")
-                    .build();
+            return CommandResponse.builder().buildError("Song is already in playlist.");
         }
 
         playlist.songs().add(toAdd);
-        return CommandResponse.builder()
-                .status("OK")
-                .message("Song added successfully.")
-                .build();
+        return CommandResponse.builder().buildOK("Song added to playlist.");
     }
 
     private CommandResponse showPlaylist(String[] args, AccessKey accessKey) {
         if (args.length != CommandType.SHOW_PLAYLIST.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("show-playlist expects 1 argument.")
-                    .build();
+            return CommandResponse.builder().buildError("show-playlist expects 1 argument.");
         }
 
         User user = users.getUser(accessKey.username());
@@ -257,10 +203,7 @@ public class CommandExecutor {
                 .findFirst()
                 .orElse(null);
         if (playlist == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Playlist with this name doesn't exists.")
-                    .build();
+            return CommandResponse.builder().buildError("Playlist with this name doesn't exists.");
         }
 
         Map<Integer, Song> result = playlist.songs().stream()
@@ -275,20 +218,14 @@ public class CommandExecutor {
 
     public CommandResponse play(String[] args, InetAddress clientAddress, SocketAddress clientSocketAddress) {
         if (args.length < CommandType.PLAY.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("play expects 1 argument.")
-                    .build();
+            return CommandResponse.builder().buildError("play expects 1 argument.");
         }
 
         int songIndex;
         try {
             songIndex = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid song index.")
-                    .build();
+            return CommandResponse.builder().buildError("Invalid song index.");
         }
 
         Song song = songs.stream()
@@ -296,20 +233,14 @@ public class CommandExecutor {
                 .findFirst()
                 .orElse(null);
         if (song == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Song with this index doesn't exists.")
-                    .build();
+            return CommandResponse.builder().buildError("Song with this index doesn't exists.");
         }
 
         if (socketThreads.containsKey(clientSocketAddress)) {
             if (socketThreads.get(clientSocketAddress).isDone()) {
                 socketThreads.remove(clientSocketAddress);
             } else {
-                return CommandResponse.builder()
-                        .status("ERROR")
-                        .message("You are already playing a song.")
-                        .build();
+                return CommandResponse.builder().buildError("You are already playing a song.");
             }
         }
 
@@ -354,36 +285,25 @@ public class CommandExecutor {
 
     public CommandResponse stop(SocketAddress clientSocketAddress) {
         if (!socketThreads.containsKey(clientSocketAddress)) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("You are not playing a song.")
-                    .build();
+            return CommandResponse.builder().buildError("You are not playing a song.");
         }
 
         socketThreads.get(clientSocketAddress).cancel(true);
         socketThreads.remove(clientSocketAddress);
 
-        return CommandResponse.builder()
-                .status("OK")
-                .build();
+        return CommandResponse.builder().buildOK("Streaming stopped.");
     }
 
     public CommandResponse top(String[] args) {
         if (args.length != CommandType.TOP.getArgumentsCount()) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("top expects 1 argument.")
-                    .build();
+            return CommandResponse.builder().buildError("top expects 1 argument.");
         }
 
         int topCount;
         try {
             topCount = Integer.parseInt(args[0]);
         } catch (NumberFormatException e) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Invalid top count.")
-                    .build();
+            return CommandResponse.builder().buildError("Invalid top count.");
         }
 
         // TODO: Implement top mechanic
