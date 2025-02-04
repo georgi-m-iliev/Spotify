@@ -1,7 +1,7 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.songs;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
-import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.SongLoadingFailureException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.SongLoadingFailureException;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -1,11 +1,13 @@
 package bg.sofia.uni.fmi.mjt.spotify.server.command;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.NetworkTools;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandType;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Playlist;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.StreamTransport;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.NoFreePortAvailableException;
 import bg.sofia.uni.fmi.mjt.spotify.server.TCPStreamServer;
 import bg.sofia.uni.fmi.mjt.spotify.server.UDPStreamServer;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.User;
@@ -27,21 +29,15 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 public class CommandExecutor {
     private final UserStorage users;
     private final List<Song> songs;
-    private final StreamTransport streamTransport;
     private final ExecutorService threadExecutor;
     private final Map<SocketAddress, Future<?>> socketThreads;
 
-    public CommandExecutor(UserStorage users, List<Song> songs, StreamTransport streamTransport,
-                            ExecutorService threadExecutor) {
+    public CommandExecutor(UserStorage users, List<Song> songs, ExecutorService threadExecutor) {
         if (users == null || songs == null) {
             throw new IllegalArgumentException("Users and songs cannot be null.");
         }
-        if (streamTransport == null) {
-            throw new IllegalArgumentException("Stream transport cannot be null.");
-        }
         this.users = users;
         this.songs = songs;
-        this.streamTransport = streamTransport;
         this.threadExecutor = threadExecutor;
         this.socketThreads = new HashMap<>();
     }
@@ -57,7 +53,6 @@ public class CommandExecutor {
         return switch (cmd.command()) {
             case REGISTER -> register(cmd.arguments());
             case LOGIN -> login(cmd.arguments());
-            case DISCONNECT -> null;
             case SEARCH -> search(cmd.arguments());
             case TOP -> top(cmd.arguments());
             case CREATE_PLAYLIST -> createPlaylist(cmd.arguments(), cmd.accessKey());
@@ -279,7 +274,7 @@ public class CommandExecutor {
     }
 
     public CommandResponse play(String[] args, InetAddress clientAddress, SocketAddress clientSocketAddress) {
-        if (args.length != CommandType.PLAY.getArgumentsCount()) {
+        if (args.length < CommandType.PLAY.getArgumentsCount()) {
             return CommandResponse.builder()
                     .status("ERROR")
                     .message("play expects 1 argument.")
@@ -328,20 +323,29 @@ public class CommandExecutor {
             // TODO: Log failure to get audio format
         }
         if (format == null) {
-            return CommandResponse.builder()
-                    .status("ERROR")
-                    .message("Failed to play song.")
-                    .build();
+            return CommandResponse.builder().buildError("Failed to play song.");
         }
 
+        StreamTransport streamTransport = StreamTransport.of(args[1]);
+        int port;
+        try{
+            port = switch (streamTransport) {
+                case TCP -> NetworkTools.findFreePort();
+                case UDP -> Integer.parseInt(args[2]);
+            };
+        } catch (NumberFormatException e) {
+            return CommandResponse.builder().buildError("Server: Malformed request from client.");
+        } catch (NoFreePortAvailableException e) {
+            return CommandResponse.builder().buildError("Couldn't open channel for streaming.");
+        }
         Runnable task = switch (streamTransport) {
-            case TCP -> new TCPStreamServer(7777, song.path());
-            case UDP -> new UDPStreamServer(50005, clientAddress, song.path(), format);
+            case TCP -> new TCPStreamServer(port, song.path());
+            case UDP -> new UDPStreamServer(port, clientAddress, song.path(), format);
         };
         socketThreads.put(clientSocketAddress, threadExecutor.submit(task));
 
         return CommandResponse.builder()
-                .status("OK")
+                .status(String.format("OK-PORT-%s", port))
                 .message(String.format("Playing %s by %s", song.name(), song.artist()))
                 .audioFormat(format)
                 .transport(streamTransport)
@@ -349,7 +353,6 @@ public class CommandExecutor {
     }
 
     public CommandResponse stop(SocketAddress clientSocketAddress) {
-
         if (!socketThreads.containsKey(clientSocketAddress)) {
             return CommandResponse.builder()
                     .status("ERROR")
@@ -391,5 +394,4 @@ public class CommandExecutor {
                 .data(Map.of())
                 .build();
     }
-
 }

@@ -1,4 +1,4 @@
-package bg.sofia.uni.fmi.mjt.spotify.server.exceptions;
+package bg.sofia.uni.fmi.mjt.spotify.commons.exceptions;
 
 public class SongLoadingFailureException extends Exception {
     public SongLoadingFailureException(String message) {

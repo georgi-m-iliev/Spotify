@@ -1,4 +1,4 @@
-package bg.sofia.uni.fmi.mjt.spotify.server.exceptions;
+package bg.sofia.uni.fmi.mjt.spotify.commons.exceptions;
 
 public class InvalidCommandException extends Exception {
     public InvalidCommandException(String message) {

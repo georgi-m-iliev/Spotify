@@ -1,10 +1,14 @@
 package bg.sofia.uni.fmi.mjt.spotify.client;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.NetworkTools;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.StreamTransport;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.NoFreePortAvailableException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.PlaybackFailedException;
 import com.google.gson.Gson;
 
 import javax.sound.sampled.LineUnavailableException;
@@ -22,15 +26,18 @@ public class SpotifyClient {
     private static final int serverPort = 9090;
 
     private final InetSocketAddress serverAddress;
+    private final StreamTransport transport;
     private final ByteBuffer buffer;
     private AccessKey accessKey;
     private boolean connected;
     private Thread playbackThread;
+    private int playPort;
 
     public SpotifyClient() {
         serverAddress = new InetSocketAddress(serverHost, serverPort);
         buffer = ByteBuffer.allocate(1024);
         accessKey = null;
+        transport = StreamTransport.UDP;
     }
 
     public void enter() {
@@ -52,14 +59,11 @@ public class SpotifyClient {
     }
 
     private void processCommand(String command, SocketChannel socketChannel) throws IOException {
-        ClientRequest request = ClientRequest.of(command, accessKey);
         String commandName = command.split(" ")[0];
         switch (commandName) {
             case "disconnect":
-                sendRequest(request, socketChannel);
                 System.out.println("Disconnected from server.");
                 connected = false;
-                return;
             case "logout":
                 if (accessKey == null) {
                     System.out.println("You aren't logged in.");
@@ -75,8 +79,27 @@ public class SpotifyClient {
                     System.out.println("You are already logged in.");
                     return;
                 }
+                break;
+            case "play":
+                if (transport == StreamTransport.UDP) {
+                    try {
+                        playPort = NetworkTools.findFreePort();
+                    } catch (NoFreePortAvailableException e) {
+                        System.out.println("Playback failed. Please try again later!");
+                        return;
+                    }
+                    command += String.format(" %s %s", transport, playPort);
+                }
+                else if (transport == StreamTransport.TCP) {
+                    command += String.format(" %s", transport);
+                }
+                break;
         }
+        ClientRequest request = ClientRequest.of(command, accessKey);
         sendRequest(request, socketChannel);
+        if (commandName.equals("disconnect")) {
+            return;
+        }
 
         CommandResponse response = getResponse(socketChannel);
         processCommandResponse(commandName, response);
@@ -104,6 +127,8 @@ public class SpotifyClient {
                     playSong(response);
                 } catch (LineUnavailableException e) {
                     System.out.println("Couldn't open audio device for playback.");
+                } catch (PlaybackFailedException e) {
+                    System.out.println("Playback failed. Please try again later!");
                 }
                 System.out.println(response.message());
                 break;
@@ -183,10 +208,14 @@ public class SpotifyClient {
         printSongList(response.data());
     }
 
-    private void playSong(CommandResponse response) throws LineUnavailableException {
+    private void playSong(CommandResponse response) throws LineUnavailableException, PlaybackFailedException {
+        if (response.transport() == StreamTransport.TCP) {
+            playPort = Integer.parseInt(response.status().split("-")[2]);
+        }
+
         Runnable streamClient = switch (response.transport()) {
-            case TCP -> new TCPStreamClient(serverAddress.getAddress(), 7777, response.audioFormat());
-            case UDP -> new UDPStreamClient(50005, response.audioFormat());
+            case TCP -> new TCPStreamClient(serverAddress.getAddress(), playPort, response.audioFormat());
+            case UDP -> new UDPStreamClient(playPort, response.audioFormat());
         };
 
         playbackThread = new Thread(streamClient);

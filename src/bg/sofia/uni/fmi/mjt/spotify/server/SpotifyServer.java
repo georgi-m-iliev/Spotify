@@ -3,11 +3,10 @@ package bg.sofia.uni.fmi.mjt.spotify.server;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.StreamTransport;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.Command;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandExecutor;
-import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.InvalidCommandException;
-import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.SongLoadingFailureException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.InvalidCommandException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.SongLoadingFailureException;
 import bg.sofia.uni.fmi.mjt.spotify.server.songs.SongLoader;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.LocalUserStorage;
 
@@ -41,14 +40,14 @@ public class SpotifyServer {
     private ByteBuffer buffer;
     private Selector selector;
     private final LocalUserStorage users;
-    private ExecutorService executor;
+    private final ExecutorService executor;
 
     public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
         this.port = port;
         this.users = new LocalUserStorage(Path.of("users.txt"));
         List<Song> availableSongs = SongLoader.loadSongs(songsDirPath);
         this.executor = Executors.newCachedThreadPool();
-        this.commandExecutor = new CommandExecutor(users, availableSongs, StreamTransport.TCP, executor);
+        this.commandExecutor = new CommandExecutor(users, availableSongs, executor);
     }
 
     public void start() {
@@ -107,6 +106,7 @@ public class SpotifyServer {
                     continue;
                 }
 
+                System.out.println(clientInput);
                 // TODO: handle wrong input, not properly formatted JSON
                 ClientRequest request = gson.fromJson(clientInput, ClientRequest.class);
 

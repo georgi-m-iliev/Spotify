@@ -2,7 +2,7 @@ package bg.sofia.uni.fmi.mjt.spotify.server.command;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandType;
-import bg.sofia.uni.fmi.mjt.spotify.server.exceptions.InvalidCommandException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.InvalidCommandException;
 
 import java.net.InetAddress;
 import java.net.SocketAddress;

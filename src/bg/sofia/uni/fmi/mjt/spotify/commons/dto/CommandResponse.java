@@ -93,5 +93,13 @@ public class CommandResponse {
         public CommandResponse build() {
             return new CommandResponse(this);
         }
+
+        public CommandResponse buildError(String message) {
+            return CommandResponse.builder().status("ERROR").message(message).build();
+        }
+
+        public CommandResponse buildOK(String message) {
+            return CommandResponse.builder().status("OK").message(message).build();
+        }
     }
 }
