@@ -1,18 +1,25 @@
 package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 
-import java.util.List;
+import bg.sofia.uni.fmi.mjt.spotify.commons.json.adapters.AudioFormatAdapter;
+import com.google.gson.annotations.JsonAdapter;
+
+import javax.sound.sampled.AudioFormat;
+import java.util.Map;
 
 public class CommandResponse {
     private final String status;
     private final String message;
     private final AccessKey accessKey;
-    private final List<Song> data;
+    private final Map<Integer, Song> data;
+    @JsonAdapter(AudioFormatAdapter.class)
+    private final AudioFormat audioFormat;
 
     private CommandResponse(Builder builder) {
         this.status = builder.status;
         this.message = builder.message;
         this.accessKey = builder.accessKey;
         this.data = builder.data;
+        this.audioFormat = builder.audioFormat;
     }
 
     public String status() {
@@ -27,8 +34,12 @@ public class CommandResponse {
         return accessKey;
     }
 
-    public List<Song> data() {
+    public Map<Integer, Song> data() {
         return data;
+    }
+
+    public AudioFormat audioFormat() {
+        return audioFormat;
     }
 
     public static Builder builder() {
@@ -39,7 +50,8 @@ public class CommandResponse {
         private String status;
         private String message;
         private AccessKey accessKey;
-        private List<Song> data;
+        private Map<Integer, Song> data;
+        private AudioFormat audioFormat;
 
         public Builder status(String status) {
             this.status = status;
@@ -56,8 +68,13 @@ public class CommandResponse {
             return this;
         }
 
-        public Builder data(List<Song> data) {
+        public Builder data(Map<Integer, Song> data) {
             this.data = data;
+            return this;
+        }
+
+        public Builder audioFormat(AudioFormat audioFormat) {
+            this.audioFormat = audioFormat;
             return this;
         }
 

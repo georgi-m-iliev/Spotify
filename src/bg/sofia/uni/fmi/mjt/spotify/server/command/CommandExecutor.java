@@ -9,6 +9,8 @@ import bg.sofia.uni.fmi.mjt.spotify.server.users.User;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.UserStorage;
 
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 public class CommandExecutor {
     private final UserStorage users;
@@ -122,7 +124,7 @@ public class CommandExecutor {
                     .build();
         }
 
-        List<Song> results = songs.stream()
+        Map<Integer, Song> results = songs.stream()
                 .filter(song -> {
                     for (String keyword : args) {
                         if (song.name().toLowerCase().contains(keyword.toLowerCase()) ||
@@ -132,7 +134,8 @@ public class CommandExecutor {
                     }
                     return false;
                 })
-                .toList();
+                .collect(Collectors.toMap(songs::indexOf, song -> song));
+
 
         return CommandResponse.builder()
                 .status("OK")
@@ -197,7 +200,7 @@ public class CommandExecutor {
         }
 
         Song toAdd = songs.stream()
-                .filter(s -> s.index() == songIndex)
+                .filter(s -> songs.indexOf(s) == songIndex)
                 .findFirst()
                 .orElse(null);
         if (toAdd == null) {
@@ -242,10 +245,13 @@ public class CommandExecutor {
                     .build();
         }
 
+        Map<Integer, Song> result = playlist.songs().stream()
+                .collect(Collectors.toMap(playlist.songs()::indexOf, song -> song));
+
         return CommandResponse.builder()
                 .status("OK")
                 .message(String.format("Playlist %s contains %s song(s).", playlist.name(), playlist.songs().size()))
-                .data(playlist.songs())
+                .data(result)
                 .build();
     }
 
@@ -268,7 +274,7 @@ public class CommandExecutor {
         }
 
         Song song = songs.stream()
-                .filter(s -> s.index() == songIndex)
+                .filter(s -> songs.indexOf(s) == songIndex)
                 .findFirst()
                 .orElse(null);
         if (song == null) {
@@ -309,7 +315,7 @@ public class CommandExecutor {
         return CommandResponse.builder()
                 .status("OK")
                 .message("Top songs.")
-                .data(List.of())
+                .data(Map.of())
                 .build();
     }
 

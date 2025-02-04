@@ -12,7 +12,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 public class SpotifyClient {
@@ -137,15 +137,16 @@ public class SpotifyClient {
         socketChannel.write(buffer);
     }
 
-    private void printSongList(List<Song> songs) {
-        String leftAlignFormat = "| %-5d| %-25s | %-22s |%n";
-        System.out.format("+------+---------------------------+------------------------+%n");
-        System.out.format("| ID   | Song name                 | Artist                 |%n");
-        System.out.format("+------+---------------------------+------------------------+%n");
-        for (Song song : songs) {
-            System.out.format(leftAlignFormat, song.index(), song.name(), song.artist());
+    private void printSongList(Map<Integer, Song> songs) {
+        String leftAlignFormat = "| %-5d| %-22s | %-25s |%n";
+        System.out.format("+------+------------------------+---------------------------+%n");
+        System.out.format("| ID   | Artist                 | Song name                 |%n");
+        System.out.format("+------+------------------------+---------------------------+%n");
+        for (Map.Entry<Integer, Song> entry : songs.entrySet()) {
+            Song song = entry.getValue();
+            System.out.format(leftAlignFormat, entry.getKey(), song.artist(), song.name());
         }
-        System.out.format("+------+---------------------------+------------------------+%n");
+        System.out.format("+------+------------------------+---------------------------+%n");
     }
 
     private void printSearchResults(CommandResponse response) {
