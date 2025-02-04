@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
@@ -207,7 +208,7 @@ public class CommandExecutor {
         }
 
         Map<Integer, Song> result = playlist.songs().stream()
-                .collect(Collectors.toMap(playlist.songs()::indexOf, song -> song));
+                .collect(Collectors.toMap(songs::indexOf, song -> song));
 
         return CommandResponse.builder()
                 .status("OK")
@@ -274,6 +275,7 @@ public class CommandExecutor {
             case UDP -> new UDPStreamServer(port, clientAddress, song.path(), format);
         };
         socketThreads.put(clientSocketAddress, threadExecutor.submit(task));
+        song.incrementStreams();
 
         return CommandResponse.builder()
                 .status(String.format("OK-PORT-%s", port))
@@ -306,12 +308,20 @@ public class CommandExecutor {
             return CommandResponse.builder().buildError("Invalid top count.");
         }
 
-        // TODO: Implement top mechanic
+        List<Song> topSongs = songs.stream()
+                .sorted((s1, s2) -> s2.streams() - s1.streams())
+                .limit(topCount)
+                .toList();
+
+        Map<Integer, Song> result = new LinkedHashMap<>();
+        for (Song song : topSongs) {
+            result.put(songs.indexOf(song), song);
+        }
 
         return CommandResponse.builder()
                 .status("OK")
                 .message("Top songs.")
-                .data(Map.of())
+                .data(result)
                 .build();
     }
 }

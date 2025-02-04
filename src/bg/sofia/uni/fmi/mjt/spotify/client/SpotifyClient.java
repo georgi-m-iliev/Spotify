@@ -141,7 +141,7 @@ public class SpotifyClient {
                 System.out.println("Playback stopped.");
                 break;
             case "top":
-                printSongList(response.data());
+                printTopSongsList(response.data());
                 break;
             case "show-playlist":
                 printPlaylist(response);
@@ -181,15 +181,15 @@ public class SpotifyClient {
     }
 
     private void printSongList(Map<Integer, Song> songs) {
-        String leftAlignFormat = "| %-5d| %-22s | %-25s |%n";
-        System.out.format("+------+------------------------+---------------------------+%n");
-        System.out.format("| ID   | Artist                 | Song name                 |%n");
-        System.out.format("+------+------------------------+---------------------------+%n");
+        String leftAlignFormat = "| %-5d| %-22s | %-35s |%n";
+        System.out.format("+------+------------------------+-------------------------------------+%n");
+        System.out.format("| ID   | Artist                 | Song name                           |%n");
+        System.out.format("+------+------------------------+-------------------------------------+%n");
         for (Map.Entry<Integer, Song> entry : songs.entrySet()) {
             Song song = entry.getValue();
             System.out.format(leftAlignFormat, entry.getKey(), song.artist(), song.name());
         }
-        System.out.format("+------+------------------------+---------------------------+%n");
+        System.out.format("+------+------------------------+-------------------------------------+%n");
     }
 
     private void printSearchResults(CommandResponse response) {
@@ -221,6 +221,18 @@ public class SpotifyClient {
         playbackThread = new Thread(streamClient);
         playbackThread.setDaemon(true);
         playbackThread.start();
+    }
+
+    private void printTopSongsList(Map<Integer, Song> songs) {
+        String leftAlignFormat = "| %-5d| %-22s | %-35s | %-7d|%n";
+        System.out.format("+------+------------------------+-------------------------------------+--------+%n");
+        System.out.format("| ID   | Artist                 | Song name                           | Plays  |%n");
+        System.out.format("+------+------------------------+-------------------------------------+--------|%n");
+        for (Map.Entry<Integer, Song> entry : songs.entrySet()) {
+            Song song = entry.getValue();
+            System.out.format(leftAlignFormat, entry.getKey(), song.artist(), song.name(), song.streams());
+        }
+        System.out.format("+------+------------------------+-------------------------------------+--------|%n");
     }
 
     public static void main(String[] args) {

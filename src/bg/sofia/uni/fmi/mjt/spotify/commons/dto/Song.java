@@ -8,12 +8,18 @@ public class Song {
     private final String artist;
     private final String name;
     private final transient Path path;
+    private int streams;
 
     public Song(String id, String artist, String name, Path path) {
+        this(id, artist, name, path, 0);
+    }
+
+    public Song(String id, String artist, String name, Path path, int streams) {
         this.id = id;
         this.name = name;
         this.artist = artist;
         this.path = path;
+        this.streams = streams;
     }
 
     public String id() {
@@ -30,6 +36,14 @@ public class Song {
 
     public Path path() {
         return path;
+    }
+
+    public int streams() {
+        return streams;
+    }
+
+    public void incrementStreams() {
+        streams++;
     }
 
     @Override
