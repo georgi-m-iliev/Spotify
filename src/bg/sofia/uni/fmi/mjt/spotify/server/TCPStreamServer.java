@@ -1,11 +1,14 @@
 package bg.sofia.uni.fmi.mjt.spotify.server;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
+
 import java.nio.file.Path;
 import java.nio.ByteBuffer;
 import java.io.IOException;
 import java.io.FileInputStream;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
+import java.util.logging.Level;
 
 public class TCPStreamServer implements Runnable{
     private final int port;
@@ -20,10 +23,10 @@ public class TCPStreamServer implements Runnable{
     public void run() {
         try (ServerSocketChannel serverSocketChannel = ServerSocketChannel.open()) {
             serverSocketChannel.bind(new java.net.InetSocketAddress(port));
-            System.out.println("Server listening on port " + port);
+            System.out.println("TCP stream server listening on port " + port);
             try (SocketChannel clientChannel = serverSocketChannel.accept();
                  FileInputStream fileInputStream = new FileInputStream(audioFilePath.toFile())) {
-                System.out.println("Client connected: " + clientChannel.getRemoteAddress());
+                System.out.println("TCP stream client connected: " + clientChannel.getRemoteAddress());
 
                 ByteBuffer buffer = ByteBuffer.allocate(4096);
                 int bytesRead;
@@ -33,18 +36,27 @@ public class TCPStreamServer implements Runnable{
                     clientChannel.write(buffer);
                     buffer.clear();
                 }
-                System.out.println("File sent to client.");
+                System.out.println("TCP streaming finished.");
             } catch (IOException e) {
                 if (e.getMessage().equals("Connection reset by peer")) {
-                    System.err.println("Client disconnected.");
+                    SpotifyLogger.getLogger().log(
+                            Level.INFO,
+                            String.format("TCP stream client %s disconnected while streaming", e.getMessage())
+                    );
                 } else {
-                    System.err.println("Error handling client: " + e.getMessage());
+                    SpotifyLogger.getLogger().log(
+                            Level.WARNING,
+                            String.format("TCP streaming error while streaming file: %s", e.getMessage())
+                    );
                 }
             }
         } catch (IOException e) {
             // Error of starting server itself
-            // TODO: Handle this error
-            System.err.println("Server error: " + e.getMessage());
+            SpotifyLogger.getLogger().log(
+                    java.util.logging.Level.SEVERE,
+                    "TCP stream server startup error: " + e.getMessage(),
+                    e
+            );
         }
     }
 }

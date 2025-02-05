@@ -1,10 +1,12 @@
 package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.json.adapters.AudioFormatAdapter;
+import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
 import com.google.gson.annotations.JsonAdapter;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class CommandResponse {
     private final String status;
@@ -95,10 +97,20 @@ public class CommandResponse {
         }
 
         public CommandResponse buildError(String message) {
+            SpotifyLogger.getLogger().log(
+                Level.FINE,
+                String.format("User %s command failed with message %s",
+                        accessKey != null ? accessKey.username() : "ANON",
+                        message));
             return CommandResponse.builder().status("ERROR").message(message).build();
         }
 
         public CommandResponse buildOK(String message) {
+            SpotifyLogger.getLogger().log(
+                Level.FINER,
+                String.format("User %s command succeeded with message %s",
+                        accessKey != null ? accessKey.username() : "ANON",
+                        message));
             return CommandResponse.builder().status("OK").message(message).build();
         }
     }

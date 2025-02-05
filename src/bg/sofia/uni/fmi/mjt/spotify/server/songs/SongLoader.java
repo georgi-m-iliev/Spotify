@@ -2,6 +2,7 @@ package bg.sofia.uni.fmi.mjt.spotify.server.songs;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.SongLoadingFailureException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -14,8 +15,10 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.logging.Level;
 
 public class SongLoader {
+    private static final String HASH_ALGORITHM = "MD5";
 
     public static List<Song> loadSongs(Path songsDirPath) throws SongLoadingFailureException {
         if (!Files.exists(songsDirPath)) {
@@ -35,10 +38,12 @@ public class SongLoader {
 
                 String[] songMetadata = SongFilenameParser.parseFilename(songPath.getFileName());
                 try {
-                    String songID = getHash(song, "MD5");
+                    String songID = getHash(song, HASH_ALGORITHM);
                     availableSongs.add(new Song(songID, songMetadata[0], songMetadata[1], songPath));
                 } catch (NoSuchAlgorithmException | IOException e) {
-                    // TODO: Log song read error
+                    SpotifyLogger.getLogger().log(
+                            Level.WARNING,
+                            "Failed to load song: " + song.getName(), e);
                 }
             }
         } catch (IOException e) {
