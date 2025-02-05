@@ -1,9 +1,16 @@
 package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 
-import java.util.List;
+import bg.sofia.uni.fmi.mjt.spotify.commons.json.adapters.PlaylistAdapter;
 
-public record Playlist(String name, List<Song> songs) {
+import java.util.List;
+import java.util.UUID;
+
+public record Playlist(UUID id, String name, List<Song> songs) {
+    public Playlist(String name, List<Song> songs) {
+        this(UUID.randomUUID(), name, songs);
+    }
+
     public static Playlist of(String name) {
-        return new Playlist(name, List.of());
+        return new Playlist(UUID.randomUUID(), name, List.of());
     }
 }
