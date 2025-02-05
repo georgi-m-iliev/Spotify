@@ -3,8 +3,6 @@ package bg.sofia.uni.fmi.mjt.spotify.client;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketException;
-import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -34,6 +32,7 @@ public class UDPStreamClient implements Runnable {
         this.status = new AtomicBoolean(true);
         this.sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
         bufferQueue = new LinkedBlockingQueue<>(DEFAULT_BUFFER_SIZE);
+        initSourceDataLine();
     }
 
     @Override
@@ -41,7 +40,6 @@ public class UDPStreamClient implements Runnable {
         Thread playbackThread = null;
         try(DatagramSocket serverSocket = new DatagramSocket(port)) {
             byte[] packetData = new byte[packetSize];
-            initSourceDataLine();
             playbackThread = getPlayer();
 
             while (status.get()) {
@@ -49,7 +47,7 @@ public class UDPStreamClient implements Runnable {
                 serverSocket.receive(receivePacket);
                 // if the packet is empty, it means the stream is finished
                 if (receivePacket.getLength() == 0) {
-                    System.out.println("Stream finished");
+                    // TODO: Log that the stream is finished
                     status.set(false);
                     break;
                 }
@@ -58,16 +56,12 @@ public class UDPStreamClient implements Runnable {
 
             playbackThread.join();
             closeSourceDataLine();
-        } catch (SocketException e) {
-            System.out.println("Socket exception");
-        } catch (LineUnavailableException e) {
-            System.out.println("Line unavailable");
+        } catch (IOException e) {
+            // TODO: Log
         } catch (InterruptedException e) {
             playbackThread.interrupt();
             sourceDataLine.flush();
             sourceDataLine.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
@@ -92,7 +86,7 @@ public class UDPStreamClient implements Runnable {
                 while (true) {
                     if (bufferQueue.isEmpty()) {
                         if (!status.get()) {
-                            System.out.println("Playback finished");
+                            System.out.println("Playback finished.");
                             break;
                         }
                         continue;
