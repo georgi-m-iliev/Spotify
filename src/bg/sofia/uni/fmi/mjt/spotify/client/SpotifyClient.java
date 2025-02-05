@@ -1,12 +1,8 @@
 package bg.sofia.uni.fmi.mjt.spotify.client;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.NetworkTools;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.AccessKey;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
+import bg.sofia.uni.fmi.mjt.spotify.commons.dto.*;
 
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.StreamTransport;
 import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.NoFreePortAvailableException;
 import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.PlaybackFailedException;
 import com.google.gson.Gson;
@@ -21,66 +17,100 @@ import java.util.Map;
 import java.util.Scanner;
 
 public class SpotifyClient {
-    static Gson gson = new Gson();
-    private static final String serverHost = "192.168.1.101";
-    private static final int serverPort = 9090;
+    private static final Gson GSON = new Gson();
+    private static final int BUFFER_SIZE = 1024;
 
     private final InetSocketAddress serverAddress;
+    private int playPort;
+
+    private SocketChannel socketChannel;
     private final StreamTransport transport;
     private final ByteBuffer buffer;
     private AccessKey accessKey;
     private boolean connected;
     private Thread playbackThread;
-    private int playPort;
 
-    public SpotifyClient() {
+    public SpotifyClient(int serverPort, String serverHost, StreamTransport transport) {
         serverAddress = new InetSocketAddress(serverHost, serverPort);
-        buffer = ByteBuffer.allocate(1024);
+        buffer = ByteBuffer.allocate(BUFFER_SIZE);
         accessKey = null;
-        transport = StreamTransport.UDP;
+        this.transport = transport;
     }
 
     public void enter() {
-        connected = true;
-        try (SocketChannel socketChannel = SocketChannel.open(serverAddress);
-             Scanner sc = new Scanner(System.in)) {
-            System.out.println("Connected to server.");
-
-            while (connected) {
+        try (Scanner sc = new Scanner(System.in)) {
+            while (true) {
                 System.out.print("> ");
                 String command = sc.nextLine();
-
-                processCommand(command, socketChannel);
+                ClientCommandType commandType = ClientCommandType.getCommandType(command.split(" ")[0]);
+                switch (commandType) {
+                    case CONNECT:
+                        connect();
+                        break;
+                    case DISCONNECT:
+                        disconnect();
+                        break;
+                    case EXIT:
+                        if (connected) {
+                            disconnect();
+                        }
+                        System.out.println("Exiting...");
+                        return;
+                    default:
+                        if (!connected) {
+                            System.out.println("You are not connected to the server.");
+                        }
+                        processCommand(command, commandType);
+                }
             }
-
         } catch (IOException e) {
-            System.err.println("Client error occurred. Please restart.");
+//             TODO: Log
+            System.err.println("Client error occurred. Please try again.");
+        } catch (Exception e) {
+//             TODO: Log
+//            System.out.println("An error occurred. Please try again later.");
         }
     }
 
-    private void processCommand(String command, SocketChannel socketChannel) throws IOException {
-        String commandName = command.split(" ")[0];
-        switch (commandName) {
-            case "disconnect":
-                System.out.println("Disconnected from server.");
-                connected = false;
-            case "logout":
+    private void connect() {
+        try {
+            socketChannel = SocketChannel.open(serverAddress);
+            System.out.println("Connected to server.");
+            connected = true;
+        } catch (IOException e) {
+            // TODO: Log
+            System.out.println("Couldn't connect to server.");
+        }
+    }
+
+    private void disconnect() {
+        try {
+            socketChannel.close();
+            System.out.println("Disconnected from server.");
+            connected = false;
+        } catch (IOException e) {
+            // TODO: Log
+            System.out.println("Disconnect from server failed.");
+        }
+    }
+
+    private void processCommand(String command, ClientCommandType commandType) throws IOException {
+        switch (commandType) {
+            case LOGOUT:
                 if (accessKey == null) {
                     System.out.println("You aren't logged in.");
-                }
-                else {
+                } else {
                     accessKey = null;
                     System.out.println("You have been logged out.");
                 }
                 return;
-            case "login":
-            case "register":
+            case LOGIN, REGISTER:
                 if (accessKey != null) {
                     System.out.println("You are already logged in.");
                     return;
                 }
                 break;
-            case "play":
+            case PLAY:
                 if (transport == StreamTransport.UDP) {
                     try {
                         playPort = NetworkTools.findFreePort();
@@ -89,23 +119,22 @@ public class SpotifyClient {
                         return;
                     }
                     command += String.format(" %s %s", transport, playPort);
-                }
-                else if (transport == StreamTransport.TCP) {
+                } else if (transport == StreamTransport.TCP) {
                     command += String.format(" %s", transport);
                 }
                 break;
         }
         ClientRequest request = ClientRequest.of(command, accessKey);
         sendRequest(request, socketChannel);
-        if (commandName.equals("disconnect")) {
+        if (commandType == ClientCommandType.DISCONNECT) {
             return;
         }
 
         CommandResponse response = getResponse(socketChannel);
-        processCommandResponse(commandName, response);
+        processCommandResponse(commandType, response);
     }
 
-    private void processCommandResponse(String command, CommandResponse response) {
+    private void processCommandResponse(ClientCommandType commandType, CommandResponse response) {
         if (response == null) {
             System.out.println("Server error occurred. Please try again later.");
             return;
@@ -118,21 +147,24 @@ public class SpotifyClient {
             return;
         }
 
-        switch (command) {
-            case "search":
-                printSearchResults(response);
+        switch (commandType) {
+
+            case SHOW_PLAYLIST, SEARCH:
+                printSongList(response);
                 break;
-            case "play":
+            case PLAY:
                 try {
                     playSong(response);
                 } catch (LineUnavailableException e) {
+                    // TODO: Log
                     System.out.println("Couldn't open audio device for playback.");
                 } catch (PlaybackFailedException e) {
+                    // TODO: Log
                     System.out.println("Playback failed. Please try again later!");
                 }
                 System.out.println(response.message());
                 break;
-            case "stop":
+            case STOP:
                 if (playbackThread == null) {
                     System.out.println("No song is currently playing.");
                     return;
@@ -140,11 +172,8 @@ public class SpotifyClient {
                 playbackThread.interrupt();
                 System.out.println("Playback stopped.");
                 break;
-            case "top":
+            case TOP:
                 printTopSongsList(response.data());
-                break;
-            case "show-playlist":
-                printPlaylist(response);
                 break;
             default:
                 System.out.println(response.message());
@@ -159,6 +188,7 @@ public class SpotifyClient {
     }
 
     private void handleError(CommandResponse response) {
+        // TODO: Log
         System.out.println(response.message());
     }
 
@@ -170,17 +200,22 @@ public class SpotifyClient {
         buffer.get(byteArray);
         String reply = new String(byteArray, StandardCharsets.UTF_8); // buffer drain
 
-        return gson.fromJson(reply, CommandResponse.class);
+        return GSON.fromJson(reply, CommandResponse.class);
     }
 
     private void sendRequest(ClientRequest request, SocketChannel socketChannel) throws IOException {
         buffer.clear();
-        buffer.put(gson.toJson(request).getBytes(StandardCharsets.UTF_8));
+        buffer.put(GSON.toJson(request).getBytes(StandardCharsets.UTF_8));
         buffer.flip();
         socketChannel.write(buffer);
     }
 
-    private void printSongList(Map<Integer, Song> songs) {
+    private void printSongList(CommandResponse response) {
+        System.out.println(response.message());
+        if (response.data().isEmpty()) {
+            return;
+        }
+        Map<Integer, Song> songs = response.data();
         String leftAlignFormat = "| %-5d| %-22s | %-35s |%n";
         System.out.format("+------+------------------------+-------------------------------------+%n");
         System.out.format("| ID   | Artist                 | Song name                           |%n");
@@ -190,22 +225,6 @@ public class SpotifyClient {
             System.out.format(leftAlignFormat, entry.getKey(), song.artist(), song.name());
         }
         System.out.format("+------+------------------------+-------------------------------------+%n");
-    }
-
-    private void printSearchResults(CommandResponse response) {
-        System.out.println(response.message());
-        if (response.data().isEmpty()) {
-            return;
-        }
-        printSongList(response.data());
-    }
-
-    private void printPlaylist(CommandResponse response) {
-        System.out.println(response.message());
-        if (response.data().isEmpty()) {
-            return;
-        }
-        printSongList(response.data());
     }
 
     private void playSong(CommandResponse response) throws LineUnavailableException, PlaybackFailedException {
@@ -236,6 +255,6 @@ public class SpotifyClient {
     }
 
     public static void main(String[] args) {
-        new SpotifyClient().enter();
+        new SpotifyClient(9090, "192.168.1.101", StreamTransport.UDP).enter();
     }
 }
