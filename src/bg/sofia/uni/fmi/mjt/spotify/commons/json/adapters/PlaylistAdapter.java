@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 public class PlaylistAdapter implements JsonSerializer<Playlist>, JsonDeserializer<Playlist> {
-    List<Song> songs;
+    private final List<Song> songs;
 
     public PlaylistAdapter(List<Song> songs) {
         this.songs = songs;
