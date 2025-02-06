@@ -73,7 +73,7 @@ public class SpotifyClient {
                             String.format("Invalid command: %s.", command),
                             e);
                 } catch (IOException e) {
-                    if (e.getMessage().contentEquals("Connection reset by peer")) {
+                    if (e.getMessage().equals("Connection reset by peer")) {
                         System.out.println("Server has closed the connection. Try again.");
                         SpotifyLogger.getLogger().log(Level.INFO, "Server has closed the connection.", e);
                         connected = false;
