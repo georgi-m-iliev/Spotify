@@ -69,7 +69,6 @@ public class SpotifyServer {
 
                         Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
                         processClientRequest(keyIterator);
-
                     } catch (IOException e) {
                         SpotifyLogger.getLogger().log(
                                 Level.WARNING,
@@ -103,9 +102,6 @@ public class SpotifyServer {
             SelectionKey key = keyIterator.next();
             if (key.isReadable()) {
                 SocketChannel clientChannel = (SocketChannel) key.channel();
-                SpotifyLogger.getLogger().log(
-                        Level.INFO,
-                        String.format("Client %s has connected.", clientChannel.getRemoteAddress()));
                 String clientInput;
                 try {
                     clientInput = getClientInput(clientChannel);
