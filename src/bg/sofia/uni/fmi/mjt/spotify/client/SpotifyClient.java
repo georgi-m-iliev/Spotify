@@ -42,26 +42,30 @@ public class SpotifyClient {
             while (true) {
                 System.out.print("> ");
                 String command = sc.nextLine();
-                ClientCommandType commandType = ClientCommandType.getCommandType(command.split(" ")[0]);
-                switch (commandType) {
-                    case CONNECT:
-                        connect();
-                        break;
-                    case DISCONNECT:
-                        disconnect();
-                        break;
-                    case EXIT:
-                        if (connected) {
+                try {
+                    ClientCommandType commandType = ClientCommandType.getCommandType(command.split(" ")[0]);
+                    switch (commandType) {
+                        case CONNECT:
+                            connect();
+                            break;
+                        case DISCONNECT:
                             disconnect();
-                        }
-                        System.out.println("Exiting...");
-                        return;
-                    default:
-                        if (!connected) {
-                            System.out.println("You are not connected to the server.");
-                            continue;
-                        }
-                        processCommand(command, commandType);
+                            break;
+                        case EXIT:
+                            if (connected) {
+                                disconnect();
+                            }
+                            System.out.println("Exiting...");
+                            return;
+                        default:
+                            if (!connected) {
+                                System.out.println("You are not connected to the server.");
+                                continue;
+                            }
+                            processCommand(command, commandType);
+                    }
+                } catch (IllegalArgumentException e) {
+                    System.out.println("Invalid command. Please try again.");
                 }
             }
         } catch (IOException e) {
