@@ -16,10 +16,7 @@ import com.google.gson.JsonSyntaxException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Iterator;
@@ -68,6 +65,8 @@ public class SpotifyServer {
 
                         Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
                         processClientRequest(keyIterator);
+                    } catch (ClosedChannelException e) {
+                        SpotifyLogger.getLogger().log(Level.FINE, "SocketChannel has been closed.");
                     } catch (IOException e) {
                         SpotifyLogger.getLogger().log(
                                 Level.WARNING,
@@ -106,7 +105,7 @@ public class SpotifyServer {
                 try {
                     clientInput = getClientInput(clientChannel);
                 } catch (IOException e) {
-                    if (e.getMessage().equals("Connection reset by peer")) {
+                    if (e.getMessage().equals("Connection reset")) {
                         SpotifyLogger.getLogger().log(
                                 Level.INFO,
                                 String.format("Client %s has forcibly disconnected.", clientChannel.getRemoteAddress()));
