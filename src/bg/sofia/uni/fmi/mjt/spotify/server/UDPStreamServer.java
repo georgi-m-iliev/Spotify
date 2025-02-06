@@ -17,6 +17,8 @@ import javax.sound.sampled.UnsupportedAudioFileException;
 
 public class UDPStreamServer implements Runnable {
     private final static int DEFAULT_PACKET_SIZE = 9000;
+    private static final long TIMING_COEFFICIENT = 600L;
+    public static final int SERVER_STARTUP_DELAY = 3000;
 
     private final int port;
     private final int packetSize;
@@ -37,11 +39,12 @@ public class UDPStreamServer implements Runnable {
         DatagramPacket datagramPacket;
         try(DatagramSocket socket = new DatagramSocket()) {
             System.out.println("UDP stream server working on port " + port);
+            Thread.sleep(SERVER_STARTUP_DELAY); // Allow client to start
             AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioFilePath.toFile());
             byte[] data = new byte[packetSize];
             int numBytesRead;
 
-            long timing = (long) (600L * packetSize / audioFormat.getFrameRate() / audioFormat.getFrameSize());
+            long timing = (long) (TIMING_COEFFICIENT * packetSize / audioFormat.getFrameRate() / audioFormat.getFrameSize());
 
             while ((numBytesRead = audioInputStream.read(data, 0, data.length)) != -1) {
                 datagramPacket = new DatagramPacket(data, numBytesRead, address, port);
