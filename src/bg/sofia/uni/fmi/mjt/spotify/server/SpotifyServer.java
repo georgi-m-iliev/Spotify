@@ -2,13 +2,12 @@ package bg.sofia.uni.fmi.mjt.spotify.server;
 
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.ClientRequest;
 import bg.sofia.uni.fmi.mjt.spotify.commons.dto.CommandResponse;
-import bg.sofia.uni.fmi.mjt.spotify.commons.dto.Song;
 import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.Command;
 import bg.sofia.uni.fmi.mjt.spotify.server.command.CommandExecutor;
 import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.InvalidCommandException;
 import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.SongLoadingFailureException;
-import bg.sofia.uni.fmi.mjt.spotify.server.songs.SongLoader;
+import bg.sofia.uni.fmi.mjt.spotify.server.songs.SongHandler;
 import bg.sofia.uni.fmi.mjt.spotify.server.users.LocalUserStorage;
 
 import com.google.gson.Gson;
@@ -24,7 +23,6 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
@@ -42,14 +40,15 @@ public class SpotifyServer {
     private ByteBuffer buffer;
     private Selector selector;
     private final LocalUserStorage users;
+    private final SongHandler songHandler;
     private final ExecutorService executor;
 
     public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
         this.port = port;
-        List<Song> availableSongs = SongLoader.loadSongs(songsDirPath);
+        this.songHandler = new SongHandler(songsDirPath);
         this.executor = Executors.newCachedThreadPool();
-        this.users = new LocalUserStorage(Path.of("users.txt"), availableSongs);
-        this.commandExecutor = new CommandExecutor(users, availableSongs, executor);
+        this.users = new LocalUserStorage(Path.of("users.txt"), songHandler.getSongs());
+        this.commandExecutor = new CommandExecutor(users, songHandler.getSongs(), executor);
     }
 
     public void start() {
@@ -94,6 +93,7 @@ public class SpotifyServer {
         }
         executor.shutdown();
         users.close();
+        songHandler.flush();
         SpotifyLogger.getLogger().log(Level.INFO, "Server has been shut down.");
     }
 
