@@ -10,10 +10,6 @@ public record Playlist(UUID id, String name, List<Song> songs) {
         this(UUID.randomUUID(), name, new ArrayList<>());
     }
 
-    public Playlist(String name, List<Song> songs) {
-        this(UUID.randomUUID(), name, songs);
-    }
-
     public static Playlist of(String name) {
         return new Playlist(name);
     }
