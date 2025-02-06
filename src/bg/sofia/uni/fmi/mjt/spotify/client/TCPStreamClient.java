@@ -1,11 +1,15 @@
 package bg.sofia.uni.fmi.mjt.spotify.client;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.PlaybackFailedException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
@@ -13,14 +17,21 @@ import javax.sound.sampled.LineUnavailableException;
 
 public class TCPStreamClient implements Runnable {
     private final InetSocketAddress serverAddress;
-    private final SourceDataLine sourceDataLine;
     private final AudioFormat audioFormat;
+    private SourceDataLine sourceDataLine;
 
-    public TCPStreamClient(InetAddress serverAddress, int port, AudioFormat audioFormat) throws LineUnavailableException {
+    public TCPStreamClient(InetAddress serverAddress, int port, AudioFormat audioFormat) throws PlaybackFailedException {
         this.serverAddress = new InetSocketAddress(serverAddress, port);
         this.audioFormat = audioFormat;
-        this.sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
-        initSourceDataLine();
+        try {
+            initSourceDataLine();
+        } catch (LineUnavailableException e) {
+            SpotifyLogger.getLogger().log(
+                    Level.SEVERE,
+                    "Failed to initialize audio playback",
+                    e);
+            throw new PlaybackFailedException("Failed to initialize audio playback", e);
+        }
     }
 
     @Override
@@ -39,9 +50,11 @@ public class TCPStreamClient implements Runnable {
             closeSourceDataLine();
         } catch (IOException e) {
             if (e instanceof SocketException && e.getMessage().equals("Connection reset")) {
-                // TODO: Log
+                SpotifyLogger.getLogger().log(
+                        Level.WARNING,
+                        "The server has closed the streaming connection");
             } else {
-                // TODO: Log
+                SpotifyLogger.getLogger().log(Level.SEVERE, "An error occurred while streaming audio", e);
             }
         }
     }
@@ -52,6 +65,7 @@ public class TCPStreamClient implements Runnable {
     }
 
     private void initSourceDataLine() throws LineUnavailableException {
+        sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
         sourceDataLine.open(audioFormat);
         sourceDataLine.start();
     }

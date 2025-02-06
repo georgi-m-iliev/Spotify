@@ -1,5 +1,8 @@
 package bg.sofia.uni.fmi.mjt.spotify.client;
 
+import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.PlaybackFailedException;
+import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -7,6 +10,7 @@ import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Level;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -22,17 +26,24 @@ public class UDPStreamClient implements Runnable {
     private final AudioFormat audioFormat;
     private final AtomicBoolean status;
 
-    private final SourceDataLine sourceDataLine;
     private final BlockingQueue<byte[]> bufferQueue;
+    private SourceDataLine sourceDataLine;
 
-    public UDPStreamClient(int port, AudioFormat audioFormat) throws LineUnavailableException {
+    public UDPStreamClient(int port, AudioFormat audioFormat) throws PlaybackFailedException {
         this.port = port;
         this.packetSize = DEFAULT_PACKET_SIZE;
         this.audioFormat = audioFormat;
         this.status = new AtomicBoolean(true);
-        this.sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
         bufferQueue = new LinkedBlockingQueue<>(DEFAULT_BUFFER_SIZE);
-        initSourceDataLine();
+        try {
+            initSourceDataLine();
+        } catch (LineUnavailableException e) {
+            SpotifyLogger.getLogger().log(
+                    Level.SEVERE,
+                    "Failed to initialize audio playback",
+                    e);
+            throw new PlaybackFailedException("Failed to initialize audio playback", e);
+        }
     }
 
     @Override
@@ -76,6 +87,7 @@ public class UDPStreamClient implements Runnable {
     }
 
     private void initSourceDataLine() throws LineUnavailableException {
+        sourceDataLine = AudioSystem.getSourceDataLine(audioFormat);
         sourceDataLine.open(audioFormat);
         sourceDataLine.start();
     }
