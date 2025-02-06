@@ -1,7 +1,5 @@
 package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 
-import bg.sofia.uni.fmi.mjt.spotify.commons.json.adapters.PlaylistAdapter;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
