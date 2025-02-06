@@ -28,12 +28,20 @@ public class SpotifyLogger {
                         } else if (record.getSourceClassName().contains("client")) {
                             side = "Client";
                         }
-                        return String.format("[%s] [%s] [%s] %s - %s%n",
+                        StringBuilder sb = new StringBuilder();
+                        sb.append(String.format("[%s] [%s] [%s] %s - %s%n",
                             dateFormat.format(new Date(record.getMillis())),
                             side,
                             record.getLevel(),
                             record.getSourceClassName().replace(BASE_PACKAGE, ""),
-                            record.getMessage());
+                            record.getMessage()));
+                        if (record.getThrown() != null) {
+                            sb.append("Exception: ").append(record.getThrown().toString()).append("\n");
+                            for (StackTraceElement element : record.getThrown().getStackTrace()) {
+                                sb.append("\tat ").append(element.toString()).append("\n");
+                            }
+                        }
+                        return sb.toString();
                     }
                 });
             logger.addHandler(fileHandler);
