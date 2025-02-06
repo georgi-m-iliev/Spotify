@@ -59,6 +59,7 @@ public class SpotifyClient {
                     default:
                         if (!connected) {
                             System.out.println("You are not connected to the server.");
+                            continue;
                         }
                         processCommand(command, commandType);
                 }
@@ -255,6 +256,6 @@ public class SpotifyClient {
     }
 
     public static void main(String[] args) {
-        new SpotifyClient(9090, "192.168.1.101", StreamTransport.UDP).enter();
+        new SpotifyClient(9090, "192.168.1.101", StreamTransport.TCP).enter();
     }
 }
