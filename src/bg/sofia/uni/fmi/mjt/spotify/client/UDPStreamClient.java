@@ -58,7 +58,7 @@ public class UDPStreamClient implements Runnable {
                 serverSocket.receive(receivePacket);
                 // if the packet is empty, it means the stream is finished
                 if (receivePacket.getLength() == 0) {
-                    // TODO: Log that the stream is finished
+                    SpotifyLogger.getLogger().log(Level.INFO, "UDP stream finished.");
                     status.set(false);
                     break;
                 }
@@ -68,7 +68,10 @@ public class UDPStreamClient implements Runnable {
             playbackThread.join();
             closeSourceDataLine();
         } catch (IOException e) {
-            // TODO: Log
+            SpotifyLogger.getLogger().log(
+                    Level.SEVERE,
+                    "UDP stream failed",
+                    e);
         } catch (InterruptedException e) {
             playbackThread.interrupt();
             sourceDataLine.flush();
