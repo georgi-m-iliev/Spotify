@@ -26,11 +26,12 @@ import java.util.logging.Level;
 
 public class SpotifyServer {
     private static final int BUFFER_SIZE = 1024;
-    private static final String HOST = "192.168.1.101";
+    private static final String USERS_FILE = "user.json";
     private static final Gson gson = new Gson();
 
     private final CommandExecutor commandExecutor;
 
+    private final String host;
     private final int port;
     private boolean isServerWorking;
 
@@ -40,11 +41,12 @@ public class SpotifyServer {
     private final SongHandler songHandler;
     private final ExecutorService executor;
 
-    public SpotifyServer(int port, Path songsDirPath) throws SongLoadingFailureException {
+    public SpotifyServer(String host, int port, Path songsDirPath) throws SongLoadingFailureException {
+        this.host = host;
         this.port = port;
         this.songHandler = new SongHandler(songsDirPath);
         this.executor = Executors.newCachedThreadPool();
-        this.users = new LocalUserStorage(Path.of("users.txt"), songHandler.getSongs());
+        this.users = new LocalUserStorage(Path.of(USERS_FILE), songHandler.getSongs());
         this.commandExecutor = new CommandExecutor(users, songHandler.getSongs(), executor);
     }
 
@@ -174,7 +176,7 @@ public class SpotifyServer {
     }
 
     private void configureServerSocketChannel(ServerSocketChannel channel, Selector selector) throws IOException {
-        channel.bind(new InetSocketAddress(HOST, this.port));
+        channel.bind(new InetSocketAddress(this.host, this.port));
         channel.configureBlocking(false);
         channel.register(selector, SelectionKey.OP_ACCEPT);
     }

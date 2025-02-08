@@ -277,6 +277,6 @@ public class SpotifyClient {
     }
 
     public static void main(String[] args) {
-        new SpotifyClient(9090, "192.168.1.101", StreamTransport.TCP).enter();
+        new SpotifyClient(9090, "localhost", StreamTransport.TCP).enter();
     }
 }
