@@ -10,7 +10,6 @@ import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -38,10 +37,7 @@ public class UDPStreamClient implements Runnable {
         try {
             initSourceDataLine();
         } catch (LineUnavailableException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.SEVERE,
-                    "Failed to initialize audio playback",
-                    e);
+            SpotifyLogger.severe("Failed to initialize audio playback", e);
             throw new PlaybackFailedException("Failed to initialize audio playback", e);
         }
     }
@@ -58,7 +54,7 @@ public class UDPStreamClient implements Runnable {
                 serverSocket.receive(receivePacket);
                 // if the packet is empty, it means the stream is finished
                 if (receivePacket.getLength() == 0) {
-                    SpotifyLogger.getLogger().log(Level.INFO, "UDP stream finished.");
+                    SpotifyLogger.info("UDP stream finished.");
                     status.set(false);
                     break;
                 }
@@ -68,10 +64,7 @@ public class UDPStreamClient implements Runnable {
             playbackThread.join();
             closeSourceDataLine();
         } catch (IOException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.SEVERE,
-                    "UDP stream failed",
-                    e);
+            SpotifyLogger.severe("UDP stream failed", e);
         } catch (InterruptedException e) {
             playbackThread.interrupt();
             sourceDataLine.flush();

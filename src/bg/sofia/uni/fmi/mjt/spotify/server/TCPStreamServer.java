@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.FileInputStream;
 import java.nio.channels.SocketChannel;
 import java.nio.channels.ServerSocketChannel;
-import java.util.logging.Level;
 
 public class TCPStreamServer implements Runnable{
     private final int port;
@@ -39,24 +38,16 @@ public class TCPStreamServer implements Runnable{
                 System.out.println("TCP streaming finished.");
             } catch (IOException e) {
                 if (e.getMessage().equals("Connection reset by peer")) {
-                    SpotifyLogger.getLogger().log(
-                            Level.INFO,
-                            String.format("TCP stream client %s disconnected while streaming", e.getMessage())
-                    );
+                    SpotifyLogger.info(String.format("TCP stream client %s disconnected while streaming",
+                                                        e.getMessage()));
                 } else {
-                    SpotifyLogger.getLogger().log(
-                            Level.WARNING,
-                            String.format("TCP streaming error while streaming file: %s", e.getMessage())
-                    );
+                    SpotifyLogger.warning(String.format("TCP streaming error while streaming file: %s",
+                                                        e.getMessage()));
                 }
             }
         } catch (IOException e) {
             // Error of starting server itself
-            SpotifyLogger.getLogger().log(
-                    java.util.logging.Level.SEVERE,
-                    "TCP stream server startup error: " + e.getMessage(),
-                    e
-            );
+            SpotifyLogger.severe("TCP stream server startup error: " + e.getMessage(), e);
         }
     }
 }

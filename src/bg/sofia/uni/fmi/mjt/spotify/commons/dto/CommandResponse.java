@@ -6,7 +6,6 @@ import com.google.gson.annotations.JsonAdapter;
 
 import javax.sound.sampled.AudioFormat;
 import java.util.Map;
-import java.util.logging.Level;
 
 public class CommandResponse {
     private final String status;
@@ -97,20 +96,12 @@ public class CommandResponse {
         }
 
         public CommandResponse buildError(String message) {
-            SpotifyLogger.getLogger().log(
-                Level.FINE,
-                String.format("User %s command failed with message %s",
-                        accessKey != null ? accessKey.username() : "ANON",
-                        message));
+            SpotifyLogger.fine(String.format("User command failed with message %s", message));
             return CommandResponse.builder().status("ERROR").message(message).build();
         }
 
         public CommandResponse buildOK(String message) {
-            SpotifyLogger.getLogger().log(
-                Level.FINER,
-                String.format("User %s command succeeded with message %s",
-                        accessKey != null ? accessKey.username() : "ANON",
-                        message));
+            SpotifyLogger.fine(String.format("User command succeeded with message %s", message));
             return CommandResponse.builder().status("OK").message(message).build();
         }
     }

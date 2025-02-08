@@ -16,7 +16,6 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.logging.Level;
 
 public class SpotifyClient {
     private static final Gson GSON = new Gson();
@@ -68,25 +67,22 @@ public class SpotifyClient {
                     }
                 } catch (IllegalArgumentException e) {
                     System.out.println("Invalid command. Please try again.");
-                    SpotifyLogger.getLogger().log(
-                            Level.WARNING,
-                            String.format("Invalid command: %s.", command),
-                            e);
+                    SpotifyLogger.warning(String.format("Invalid command: %s.", command), e);
                 } catch (IOException e) {
                     if (e.getMessage().equals("Connection reset by peer")) {
                         System.out.println("Server has closed the connection. Try again.");
-                        SpotifyLogger.getLogger().log(Level.INFO, "Server has closed the connection.", e);
+                        SpotifyLogger.warning("Server has closed the connection.", e);
                         connected = false;
                     }
                     else {
                         System.out.println("Server error. Try again");
-                        SpotifyLogger.getLogger().log(Level.SEVERE, "Server error occurred.", e);
+                        SpotifyLogger.severe("Server error occurred.", e);
                     }
                 }
             }
         } catch (Exception e) {
             System.out.println("An unexpected error occurred.");
-            SpotifyLogger.getLogger().log(Level.SEVERE, "Unexpected occurred.", e);
+            SpotifyLogger.severe("Unexpected occurred.", e);
         }
     }
 
@@ -94,11 +90,11 @@ public class SpotifyClient {
         try {
             socketChannel = SocketChannel.open(serverAddress);
             System.out.println("Connected to server.");
-            SpotifyLogger.getLogger().log(Level.INFO, "Successfully connected to server " + serverAddress);
+            SpotifyLogger.info("Successfully connected to server " + serverAddress);
             connected = true;
         } catch (IOException e) {
             System.out.println("Couldn't connect to server.");
-            SpotifyLogger.getLogger().log(Level.SEVERE, "Failed to connect to server.", e);
+            SpotifyLogger.severe("Failed to connect to server.", e);
         }
     }
 
@@ -106,11 +102,11 @@ public class SpotifyClient {
         try {
             socketChannel.close();
             System.out.println("Disconnected from server.");
-            SpotifyLogger.getLogger().log(Level.INFO, "Disconnected from server " + serverAddress);
+            SpotifyLogger.info("Disconnected from server " + serverAddress);
             connected = false;
         } catch (IOException e) {
             System.out.println("Disconnect from server failed.");
-            SpotifyLogger.getLogger().log(Level.SEVERE, "Failed to disconnect from server.", e);
+            SpotifyLogger.warning("Failed to disconnect from server.", e);
         }
     }
 
@@ -136,7 +132,7 @@ public class SpotifyClient {
                         playPort = NetworkTools.findFreePort();
                     } catch (NoFreePortAvailableException e) {
                         System.out.println("Playback failed. Please try again later!");
-                        SpotifyLogger.getLogger().log(Level.SEVERE, "Playback failed.", e);
+                        SpotifyLogger.severe("Playback failed.", e);
                         return;
                     }
                     command += String.format(" %s %s", transport, playPort);
@@ -158,7 +154,7 @@ public class SpotifyClient {
     private void processCommandResponse(ClientCommandType commandType, CommandResponse response) {
         if (response == null) {
             System.out.println("Server error occurred. Please try again later.");
-            SpotifyLogger.getLogger().log(Level.WARNING, "Server returned an empty response.");
+            SpotifyLogger.warning("Server returned an empty response.");
             return;
         }
 
@@ -178,10 +174,10 @@ public class SpotifyClient {
                     playSong(response);
                 } catch (LineUnavailableException e) {
                     System.out.println("Couldn't open audio device for playback.");
-                    SpotifyLogger.getLogger().log(Level.SEVERE, "Couldn't open audio device for playback.", e);
+                    SpotifyLogger.severe("Couldn't open audio device for playback.", e);
                 } catch (PlaybackFailedException e) {
                     System.out.println("Playback failed. Please try again later!");
-                    SpotifyLogger.getLogger().log(Level.SEVERE, "Playback failed.", e);
+                    SpotifyLogger.severe("Playback failed.", e);
                 }
                 System.out.println(response.message());
                 break;
@@ -210,8 +206,7 @@ public class SpotifyClient {
 
     private void handleError(CommandResponse response) {
         System.out.println(response.message());
-        SpotifyLogger.getLogger().log(Level.WARNING,
-                "Server responded with an error: " + response.message());
+        SpotifyLogger.warning("Server responded with an error: " + response.message());
     }
 
     private CommandResponse getResponse(SocketChannel socketChannel) throws IOException {

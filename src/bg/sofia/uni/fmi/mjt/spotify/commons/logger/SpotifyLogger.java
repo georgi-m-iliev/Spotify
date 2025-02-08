@@ -52,7 +52,27 @@ public class SpotifyLogger {
 
     private SpotifyLogger() {}
 
-    public static Logger getLogger() {
-        return logger;
+    public static void fine(String message) {
+        logger.fine(message);
+    }
+
+    public static void info(String message) {
+        logger.info(message);
+    }
+
+    public static void warning(String message) {
+        logger.warning(message);
+    }
+
+    public static void warning(String message, Throwable thrown) {
+        logger.log(Level.WARNING, message, thrown);
+    }
+
+    public static void severe(String message) {
+        logger.severe(message);
+    }
+
+    public static void severe(String message, Throwable thrown) {
+        logger.log(Level.SEVERE, message, thrown);
     }
 }

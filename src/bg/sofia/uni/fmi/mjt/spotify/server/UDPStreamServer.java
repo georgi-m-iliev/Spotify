@@ -8,7 +8,6 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.file.Path;
-import java.util.logging.Level;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -58,25 +57,15 @@ public class UDPStreamServer implements Runnable {
             System.out.println("UDP streaming finished.");
         } catch (SocketException e) {
             if (e.getMessage().equals("socket closed")) {
-                SpotifyLogger.getLogger().log(
-                        Level.INFO,
-                        "UDP stream client on port closed");
+                SpotifyLogger.info("UDP stream client on port closed");
             } else {
-                SpotifyLogger.getLogger().log(
-                        Level.WARNING,
-                        "UDP stream server error: " + e.getMessage(),
-                        e);
+                SpotifyLogger.warning("UDP stream server error: " + e.getMessage(), e);
             }
         } catch (InterruptedException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.INFO,
-                    "UDP stream server terminated");
+            SpotifyLogger.info("UDP stream server terminated");
             Thread.currentThread().interrupt();
         } catch (IOException | UnsupportedAudioFileException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.SEVERE,
-                    "UDP stream server error: " + e.getMessage(),
-                    e);
+            SpotifyLogger.severe("UDP stream server error: " + e.getMessage(), e);
         }
     }
 }

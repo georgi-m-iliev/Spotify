@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -46,11 +45,9 @@ public class CommandExecutor {
     }
 
     public CommandResponse execute(Command cmd) {
-        SpotifyLogger.getLogger().log(
-                Level.FINE,
-                String.format("User %s executed command %s",
-                        cmd.accessKey() != null ? cmd.accessKey().username() : "ANON",
-                        cmd.command()));
+        SpotifyLogger.fine(String.format("User %s executed command %s",
+                                        cmd.accessKey() != null ? cmd.accessKey().username() : "ANON",
+                                        cmd.command()));
         if (cmd.command().requiresAuthentication()) {
             CommandResponse errAuthResponse = validateAuthentication(cmd.accessKey());
             if (errAuthResponse != null) {
@@ -256,14 +253,9 @@ public class CommandExecutor {
         try {
             format = AudioSystem.getAudioFileFormat(song.path().toFile()).getFormat();
         } catch (IOException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.WARNING,
-                    "Failed to get audio format for song: " + song.name(),
-                    e);
+            SpotifyLogger.warning("Failed to get audio format for song: " + song.name(), e);
         } catch (UnsupportedAudioFileException e) {
-            SpotifyLogger.getLogger().log(
-                    Level.WARNING,
-                    "Unsupported audio format for song: " + song.path());
+            SpotifyLogger.warning("Unsupported audio format for song: " + song.path());
         }
         if (format == null) {
             return CommandResponse.builder().buildError("Failed to play song.");
