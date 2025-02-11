@@ -264,7 +264,7 @@ public class CommandExecutor {
 
         StreamTransport streamTransport = StreamTransport.of(args[1]);
         int port;
-        try{
+        try {
             port = switch (streamTransport) {
                 case TCP -> NetworkTools.findFreePort();
                 case UDP -> Integer.parseInt(args[2]);
