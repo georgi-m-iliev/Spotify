@@ -16,18 +16,16 @@ public record Command(
         InetAddress originAddress,
         SocketAddress originSocket) {
 
-    public static CommandBuilder creator() {
+    public static CommandBuilder builder() {
         return new CommandBuilder();
     }
 
     public static class CommandBuilder {
-
         private CommandType command;
         private String[] arguments;
         private AccessKey accessKey;
         private InetAddress originAddress;
         private SocketAddress originSocket;
-
 
         public CommandBuilder command(String command) throws InvalidCommandException {
             List<String> tokens = getCommandArguments(command);
