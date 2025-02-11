@@ -56,4 +56,8 @@ public class Song {
     public int hashCode() {
         return Objects.hash(name, artist);
     }
+
+    public static Song of(String id, String artist, String name, Path path) {
+        return new Song(id, artist, name, path);
+    }
 }
