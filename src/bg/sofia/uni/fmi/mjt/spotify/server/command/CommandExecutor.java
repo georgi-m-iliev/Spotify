@@ -222,7 +222,7 @@ public class CommandExecutor {
                 .build();
     }
 
-    public CommandResponse play(String[] args, InetAddress clientAddress, SocketAddress clientSocketAddress) {
+    private CommandResponse play(String[] args, InetAddress clientAddress, SocketAddress clientSocketAddress) {
         if (args.length < CommandType.PLAY.getArgumentsCount()) {
             return CommandResponse.builder().buildError("play expects 1 argument.");
         }
@@ -289,7 +289,7 @@ public class CommandExecutor {
                 .build();
     }
 
-    public CommandResponse stop(SocketAddress clientSocketAddress) {
+    private CommandResponse stop(SocketAddress clientSocketAddress) {
         if (!socketThreads.containsKey(clientSocketAddress)) {
             return CommandResponse.builder().buildError("You are not playing a song.");
         }
@@ -300,7 +300,7 @@ public class CommandExecutor {
         return CommandResponse.builder().buildOK("Streaming stopped.");
     }
 
-    public CommandResponse top(String[] args) {
+    private CommandResponse top(String[] args) {
         if (args.length != CommandType.TOP.getArgumentsCount()) {
             return CommandResponse.builder().buildError("top expects 1 argument.");
         }
