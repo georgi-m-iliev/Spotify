@@ -32,11 +32,19 @@ public class SpotifyClient {
     private boolean connected;
     private Thread playbackThread;
 
-    public SpotifyClient(int serverPort, String serverHost, StreamTransport transport) {
-        serverAddress = new InetSocketAddress(serverHost, serverPort);
+    public SpotifyClient(SocketChannel socketChannel, StreamTransport transport) {
+        if (socketChannel == null) {
+            throw new IllegalArgumentException("Socket channel cannot be null.");
+        }
+        if (socketChannel.isOpen()) {
+            System.out.println("Connected to server.");
+            connected = true;
+        }
+        this.socketChannel = socketChannel;
+        this.transport = transport;
+        this.serverAddress = (InetSocketAddress) socketChannel.socket().getRemoteSocketAddress();
         buffer = ByteBuffer.allocate(BUFFER_SIZE);
         accessKey = null;
-        this.transport = transport;
     }
 
     public void enter() {
@@ -272,7 +280,8 @@ public class SpotifyClient {
         System.out.format("+------+------------------------+-------------------------------------+--------|%n");
     }
 
-    public static void main(String[] args) {
-        new SpotifyClient(9090, "localhost", StreamTransport.TCP).enter();
+    public static void main(String[] args) throws IOException {
+        SocketChannel socketChannel1 = SocketChannel.open(new InetSocketAddress("localhost", 9090));
+        new SpotifyClient(socketChannel1, StreamTransport.TCP).enter();
     }
 }
