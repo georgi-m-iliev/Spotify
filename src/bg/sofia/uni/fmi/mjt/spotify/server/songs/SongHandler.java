@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.logging.Level;
 
 public class SongHandler implements AutoCloseable {
     private static final String HASH_ALGORITHM = "MD5";
@@ -46,7 +47,7 @@ public class SongHandler implements AutoCloseable {
                     savedSongs.addAll(List.of(loadedSongs));
                 }
             } catch (Exception e) {
-                SpotifyLogger.warning("Failed to load songs from file", e);
+                SpotifyLogger.logger().log(Level.WARNING, "Failed to load songs from file", e);
             }
         }
 
@@ -70,7 +71,7 @@ public class SongHandler implements AutoCloseable {
                         songs.add(new Song(songID, songMetadata[0], songMetadata[1], songPath));
                     }
                 } catch (NoSuchAlgorithmException | IOException e) {
-                    SpotifyLogger.warning("Failed to load song: " + song.getName(), e);
+                    SpotifyLogger.logger().log(Level.WARNING, "Failed to load song: " + song.getName(), e);
                 }
             }
         } catch (IOException e) {
@@ -82,7 +83,7 @@ public class SongHandler implements AutoCloseable {
     public void saveSongs() throws IOException {
         Path saveFilePath = Path.of(songsDirPath.toString(), "songs.json");
         if (saveFilePath.toFile().createNewFile()) {
-            SpotifyLogger.info("Created new file for songs");
+            SpotifyLogger.logger().info("Created new file for songs");
         }
         try (FileWriter writer = new FileWriter(saveFilePath.toFile())) {
             GSON.toJson(songs, writer);
@@ -111,7 +112,7 @@ public class SongHandler implements AutoCloseable {
         try {
             saveSongs();
         } catch (IOException e) {
-            SpotifyLogger.warning("Failed to save songs", e);
+            SpotifyLogger.logger().log(Level.WARNING, "Failed to save songs", e);
         }
     }
 

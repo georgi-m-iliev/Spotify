@@ -22,10 +22,11 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
 
 public class SpotifyServer {
     private static final int BUFFER_SIZE = 1024;
-    private static final String USERS_FILE = "user.json";
+    private static final String USERS_FILE = "users.json";
     private static final Gson gson = new Gson();
 
     private final CommandExecutor commandExecutor;
@@ -51,7 +52,7 @@ public class SpotifyServer {
 
     public void start() {
         new Thread(() -> {
-            SpotifyLogger.info("Server starting up");
+            SpotifyLogger.logger().info("Server starting up");
             try (ServerSocketChannel serverSocketChannel = ServerSocketChannel.open()) {
                 selector = Selector.open();
                 configureServerSocketChannel(serverSocketChannel, selector);
@@ -67,21 +68,25 @@ public class SpotifyServer {
                         Iterator<SelectionKey> keyIterator = selector.selectedKeys().iterator();
                         processClientRequest(keyIterator);
                     } catch (ClosedChannelException e) {
-                        SpotifyLogger.fine("SocketChannel has been closed.");
+                        SpotifyLogger.logger().fine("SocketChannel has been closed.");
                     } catch (IOException e) {
-                        SpotifyLogger.warning(String.format("Error occurred while processing client request: %s",
-                                                e.getMessage()), e);
+                        SpotifyLogger.logger().log(
+                            Level.WARNING,
+                            String.format("Error occurred while processing client request: %s",
+                                            e.getMessage()), e);
                         System.out.println("Error occurred while processing client request: " + e.getMessage());
                     }
                 }
             } catch (IOException e) {
-                SpotifyLogger.severe(String.format("Error occurred while starting server: %s", e.getMessage()), e);
+                SpotifyLogger.logger().log(
+                    Level.SEVERE,
+                    String.format("Error occurred while starting server: %s", e.getMessage()), e);
             }
         }).start();
     }
 
     public void stop() {
-        SpotifyLogger.info("Server shutting down...");
+        SpotifyLogger.logger().info("Server shutting down...");
         this.isServerWorking = false;
         if (selector.isOpen()) {
             selector.wakeup();
@@ -89,7 +94,7 @@ public class SpotifyServer {
         executor.shutdown();
         users.close();
         songHandler.flush();
-        SpotifyLogger.info("Server has been shut down.");
+        SpotifyLogger.logger().info("Server has been shut down.");
     }
 
     private void processClientRequest(Iterator<SelectionKey> keyIterator) throws IOException {
@@ -102,7 +107,7 @@ public class SpotifyServer {
                     clientInput = getClientInput(clientChannel);
                 } catch (IOException e) {
                     if (e.getMessage().equals("Connection reset")) {
-                        SpotifyLogger.info(String.format("Client %s has forcibly disconnected.",
+                        SpotifyLogger.logger().info(String.format("Client %s has forcibly disconnected.",
                                             clientChannel.getRemoteAddress()));
                     }
                     disposeSocket(clientChannel, key, keyIterator);
@@ -118,15 +123,16 @@ public class SpotifyServer {
                 try {
                     request = gson.fromJson(clientInput, ClientRequest.class);
                 } catch (JsonSyntaxException e) {
-                    SpotifyLogger.warning(String.format("Error occurred while parsing client request: %s",
-                                                        e.getMessage()), e);
+                    SpotifyLogger.logger().log(
+                        Level.WARNING,
+                        String.format("Error occurred while parsing client request: %s", e.getMessage()), e);
                     disposeSocket(clientChannel, key, keyIterator);
                     continue;
                 }
 
                 if (request.command().equals("disconnect")) {
                     System.out.println("Client has requested a disconnect: " + clientChannel.getRemoteAddress());
-                    SpotifyLogger.info(String.format("Client %s has disconnected willfully.",
+                    SpotifyLogger.logger().info(String.format("Client %s has disconnected willfully.",
                             clientChannel.getRemoteAddress()));
                     disposeSocket(clientChannel, key, keyIterator);
                     continue;
@@ -134,7 +140,7 @@ public class SpotifyServer {
 
                 CommandResponse response;
                 try {
-                    Command command = Command.creator()
+                    Command command = Command.builder()
                             .command(request.command().stripTrailing())
                             .accessKey(request.accessKey())
                             .originAddress(clientChannel.socket().getInetAddress())
@@ -142,13 +148,14 @@ public class SpotifyServer {
                             .build();
                     response = commandExecutor.execute(command);
                 } catch (InvalidCommandException e) {
-                    SpotifyLogger.warning(String.format("Client %s has sent invalid command %s.",
+                    SpotifyLogger.logger().warning(String.format("Client %s has sent invalid command %s.",
                                             clientChannel.getRemoteAddress(),
                                             request.command()));
                     response = CommandResponse.builder().buildError("Invalid command.");
                 } catch (Exception e) {
-                    SpotifyLogger.severe(String.format("Error occurred while executing command: %s",
-                                    e.getMessage()), e);
+                    SpotifyLogger.logger().log(
+                        Level.SEVERE,
+                        String.format("Error occurred while executing command: %s", e.getMessage()), e);
                     response = CommandResponse.builder().buildError("An error occurred while executing the command.");
                 }
 
@@ -171,7 +178,7 @@ public class SpotifyServer {
         clientChannel.close();
         key.cancel();
         keyIterator.remove();
-        SpotifyLogger.info(String.format("Client %s has disconnected.", clientChannel.getRemoteAddress()));
+        SpotifyLogger.logger().info(String.format("Client %s has disconnected.", clientChannel.getRemoteAddress()));
     }
 
     private String getClientInput(SocketChannel clientChannel) throws IOException {

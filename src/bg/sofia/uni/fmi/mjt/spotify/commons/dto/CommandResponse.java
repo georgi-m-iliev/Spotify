@@ -68,12 +68,12 @@ public record CommandResponse (
         }
 
         public CommandResponse buildError(String message) {
-            SpotifyLogger.fine(String.format("User command failed with message %s", message));
+            SpotifyLogger.logger().fine(String.format("User command failed with message %s", message));
             return CommandResponse.builder().status("ERROR").message(message).build();
         }
 
         public CommandResponse buildOK(String message) {
-            SpotifyLogger.fine(String.format("User command succeeded with message %s", message));
+            SpotifyLogger.logger().fine(String.format("User command succeeded with message %s", message));
             return CommandResponse.builder().status("OK").message(message).build();
         }
     }

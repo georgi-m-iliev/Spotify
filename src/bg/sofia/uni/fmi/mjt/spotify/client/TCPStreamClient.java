@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.net.SocketException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+import java.util.logging.Level;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.SourceDataLine;
@@ -25,7 +26,7 @@ public class TCPStreamClient implements Runnable {
         try {
             initSourceDataLine();
         } catch (LineUnavailableException e) {
-            SpotifyLogger.severe("Failed to initialize audio playback", e);
+            SpotifyLogger.logger().log(Level.SEVERE, "Failed to initialize audio playback", e);
             throw new PlaybackFailedException("Failed to initialize audio playback", e);
         }
     }
@@ -46,9 +47,9 @@ public class TCPStreamClient implements Runnable {
             closeSourceDataLine();
         } catch (IOException e) {
             if (e instanceof SocketException && e.getMessage().equals("Connection reset")) {
-                SpotifyLogger.warning("The server has closed the streaming connection");
+                SpotifyLogger.logger().warning("The server has closed the streaming connection");
             } else {
-                SpotifyLogger.severe("An error occurred while streaming audio", e);
+                SpotifyLogger.logger().log(Level.SEVERE, "An error occurred while streaming audio", e);
             }
         }
     }

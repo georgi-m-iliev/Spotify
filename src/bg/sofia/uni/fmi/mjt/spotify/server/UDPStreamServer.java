@@ -8,6 +8,7 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.nio.file.Path;
+import java.util.logging.Level;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -43,7 +44,8 @@ public class UDPStreamServer implements Runnable {
             byte[] data = new byte[packetSize];
             int numBytesRead;
 
-            long timing = (long) (TIMING_COEFFICIENT * packetSize / audioFormat.getFrameRate() / audioFormat.getFrameSize());
+            long timing = (long) (TIMING_COEFFICIENT * packetSize /
+                    audioFormat.getFrameRate() / audioFormat.getFrameSize());
 
             while ((numBytesRead = audioInputStream.read(data, 0, data.length)) != -1) {
                 datagramPacket = new DatagramPacket(data, numBytesRead, address, port);
@@ -57,15 +59,15 @@ public class UDPStreamServer implements Runnable {
             System.out.println("UDP streaming finished.");
         } catch (SocketException e) {
             if (e.getMessage().equals("socket closed")) {
-                SpotifyLogger.info("UDP stream client on port closed");
+                SpotifyLogger.logger().info("UDP stream client on port closed");
             } else {
-                SpotifyLogger.warning("UDP stream server error: " + e.getMessage(), e);
+                SpotifyLogger.logger().log(Level.WARNING, "UDP stream server error: " + e.getMessage(), e);
             }
         } catch (InterruptedException e) {
-            SpotifyLogger.info("UDP stream server terminated");
+            SpotifyLogger.logger().info("UDP stream server terminated");
             Thread.currentThread().interrupt();
         } catch (IOException | UnsupportedAudioFileException e) {
-            SpotifyLogger.severe("UDP stream server error: " + e.getMessage(), e);
+            SpotifyLogger.logger().log(Level.SEVERE, "UDP stream server error: " + e.getMessage(), e);
         }
     }
 }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
@@ -45,7 +46,7 @@ public class CommandExecutor {
     }
 
     public CommandResponse execute(Command cmd) {
-        SpotifyLogger.fine(String.format("User %s executed command %s",
+        SpotifyLogger.logger().fine(String.format("User %s executed command %s",
                                         cmd.accessKey() != null ? cmd.accessKey().username() : "ANON",
                                         cmd.command()));
         if (cmd.command().requiresAuthentication()) {
@@ -253,9 +254,9 @@ public class CommandExecutor {
         try {
             format = AudioSystem.getAudioFileFormat(song.path().toFile()).getFormat();
         } catch (IOException e) {
-            SpotifyLogger.warning("Failed to get audio format for song: " + song.name(), e);
+            SpotifyLogger.logger().log(Level.WARNING, "Failed to get audio format for song: " + song.name(), e);
         } catch (UnsupportedAudioFileException e) {
-            SpotifyLogger.warning("Unsupported audio format for song: " + song.path());
+            SpotifyLogger.logger().warning("Unsupported audio format for song: " + song.path());
         }
         if (format == null) {
             return CommandResponse.builder().buildError("Failed to play song.");
