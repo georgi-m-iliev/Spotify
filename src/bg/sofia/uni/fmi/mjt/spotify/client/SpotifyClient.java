@@ -8,7 +8,6 @@ import bg.sofia.uni.fmi.mjt.spotify.commons.exceptions.PlaybackFailedException;
 import bg.sofia.uni.fmi.mjt.spotify.commons.logger.SpotifyLogger;
 import com.google.gson.Gson;
 
-import javax.sound.sampled.LineUnavailableException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -181,9 +180,6 @@ public class SpotifyClient {
             case PLAY:
                 try {
                     playSong(response);
-                } catch (LineUnavailableException e) {
-                    System.out.println("Couldn't open audio device for playback.");
-                    SpotifyLogger.logger().log(Level.SEVERE, "Couldn't open audio device for playback.", e);
                 } catch (PlaybackFailedException e) {
                     System.out.println("Playback failed. Please try again later!");
                     SpotifyLogger.logger().log(Level.SEVERE, "Playback failed.", e);
@@ -253,7 +249,7 @@ public class SpotifyClient {
         System.out.format("+------+------------------------+-------------------------------------+%n");
     }
 
-    private void playSong(CommandResponse response) throws LineUnavailableException, PlaybackFailedException {
+    private void playSong(CommandResponse response) throws PlaybackFailedException {
         if (response.transport() == StreamTransport.TCP) {
             playPort = Integer.parseInt(response.status().split("-")[2]);
         }
