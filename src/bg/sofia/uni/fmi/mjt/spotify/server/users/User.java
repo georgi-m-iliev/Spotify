@@ -8,6 +8,7 @@ import java.util.List;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
+import java.util.Objects;
 
 public class User {
     private final String email;
@@ -86,5 +87,16 @@ public class User {
 
     public static User of(String email, String password) {
         return new User(email, password);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof User user)) return false;
+        return Objects.equals(getEmail(), user.getEmail()) && Objects.equals(passwordHash, user.passwordHash);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getEmail(), passwordHash);
     }
 }
