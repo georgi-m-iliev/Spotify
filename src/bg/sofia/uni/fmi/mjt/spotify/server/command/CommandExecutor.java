@@ -75,7 +75,7 @@ public class CommandExecutor {
         }
 
         User user = users.getUser(accessKey.username());
-        if (!user.isAccessKeyValid(accessKey)) {
+        if (user == null || !user.isAccessKeyValid(accessKey)) {
             return CommandResponse.builder().buildError("Invalid access key.");
         }
         return null;
