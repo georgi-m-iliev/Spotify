@@ -3,7 +3,7 @@ package bg.sofia.uni.fmi.mjt.spotify.commons.dto;
 public enum CommandType {
     REGISTER(2, false),
     LOGIN(2, false),
-    SEARCH(-1, false),
+    SEARCH(1, false),
     TOP(1, false),
     CREATE_PLAYLIST(1, true),
     ADD_SONG_TO(2, true),
