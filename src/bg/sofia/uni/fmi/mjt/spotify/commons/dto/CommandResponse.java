@@ -7,46 +7,18 @@ import com.google.gson.annotations.JsonAdapter;
 import javax.sound.sampled.AudioFormat;
 import java.util.Map;
 
-public class CommandResponse {
-    private final String status;
-    private final String message;
-    private final AccessKey accessKey;
-    private final Map<Integer, Song> data;
+public record CommandResponse (
+    String status,
+    String message,
+    AccessKey accessKey,
+    Map<Integer, Song> data,
     @JsonAdapter(AudioFormatAdapter.class)
-    private final AudioFormat audioFormat;
-    private final StreamTransport transport;
+    AudioFormat audioFormat,
+    StreamTransport transport) {
 
     private CommandResponse(Builder builder) {
-        this.status = builder.status;
-        this.message = builder.message;
-        this.accessKey = builder.accessKey;
-        this.data = builder.data;
-        this.audioFormat = builder.audioFormat;
-        this.transport = builder.transport;
-    }
-
-    public String status() {
-        return status;
-    }
-
-    public String message() {
-        return message;
-    }
-
-    public AccessKey accessKey() {
-        return accessKey;
-    }
-
-    public Map<Integer, Song> data() {
-        return data;
-    }
-
-    public AudioFormat audioFormat() {
-        return audioFormat;
-    }
-
-    public StreamTransport transport() {
-        return transport;
+        this(builder.status, builder.message, builder.accessKey,
+                builder.data, builder.audioFormat, builder.transport);
     }
 
     public static Builder builder() {
