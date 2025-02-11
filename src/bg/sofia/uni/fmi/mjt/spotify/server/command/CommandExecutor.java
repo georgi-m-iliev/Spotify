@@ -324,7 +324,7 @@ public class CommandExecutor {
 
         return CommandResponse.builder()
                 .status("OK")
-                .message("Top songs.")
+                .message(String.format("Top %s song(s).", topCount))
                 .data(result)
                 .build();
     }
